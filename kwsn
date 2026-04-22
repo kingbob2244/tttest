@@ -92,13 +92,13 @@ local Library = {
     HudRegistry = {};
 
     FontColor = Color3.fromRGB(255, 255, 255);
-    MainColor = Color3.fromRGB(28, 28, 28);
-    BackgroundColor = Color3.fromRGB(20, 20, 20);
+    MainColor = Color3.fromRGB(16, 18, 21);
+    BackgroundColor = Color3.fromRGB(22, 25, 29);
 
-    AccentColor = Color3.fromRGB(0, 85, 255);
+    AccentColor = Color3.fromRGB(196, 231, 255);
     DisabledAccentColor = Color3.fromRGB(142, 142, 142);
 
-    OutlineColor = Color3.fromRGB(50, 50, 50);
+    OutlineColor = Color3.fromRGB(32, 36, 42);
     DisabledOutlineColor = Color3.fromRGB(70, 70, 70);
 
     DisabledTextColor = Color3.fromRGB(142, 142, 142);
@@ -106,7 +106,7 @@ local Library = {
     RiskColor = Color3.fromRGB(255, 50, 50);
 
     Black = Color3.new(0, 0, 0);
-    Font = Enum.Font.Gotham,
+    Font = Enum.Font.Code,
 
     OpenedFrames = {};
     DependencyBoxes = {};
@@ -1001,8 +1001,8 @@ do
         local HueBoxOuter = Library:Create('Frame', {
             BorderColor3 = Color3.new(0, 0, 0);
             Position = UDim2.fromOffset(4, 228),
-            Size = UDim2.new(0.5, -6, 0, 20),
-            ZIndex = 18,
+            Size = UDim2.new(0.5, -6, 0, 20);
+            ZIndex = 18;
             Parent = PickerFrameInner;
         });
 
@@ -1420,7 +1420,7 @@ do
 
                 Library:AttemptSave();
             end;
-        });
+        end);
 
         DisplayFrame.InputBegan:Connect(function(Input)
             if Library:MouseIsOverOpenedFrame(Input) then
@@ -4639,6 +4639,7 @@ do
     end;
 end;
 
+-- < Create other UI elements >
 do
     Library.LeftNotificationArea = Library:Create('Frame', {
         BackgroundTransparency = 1;
@@ -5022,6 +5023,7 @@ function Library:Notify(...)
     return Data
 end
 
+-- MODIFIED: Slightly different layout with tabs at the top
 function Library:CreateWindow(...)
     local Arguments = { ... }
     local Config = { AnchorPoint = Vector2.zero }
@@ -5154,6 +5156,7 @@ function Library:CreateWindow(...)
         Parent = Inner;
     });
 
+    -- MODIFIED: Main section with tabs at the top
     local MainSectionOuter = Library:Create('Frame', {
         BackgroundColor3 = Library.BackgroundColor;
         BorderColor3 = Library.OutlineColor;
@@ -5192,6 +5195,7 @@ function Library:CreateWindow(...)
         BackgroundColor3 = 'BackgroundColor';
     });
 
+    -- MODIFIED: Top tabs area
     local TabArea = Library:Create('Frame', {
         BackgroundTransparency = 1;
         Position = UDim2.new(0, 10, 0, 8);
@@ -5209,6 +5213,7 @@ function Library:CreateWindow(...)
         Parent = TabArea;
     });
 
+    -- MODIFIED: Content area below tabs
     local ContentArea = Library:Create('Frame', {
         BackgroundTransparency = 1;
         Position = UDim2.new(0, 8, 0, 45);
@@ -5262,6 +5267,7 @@ function Library:CreateWindow(...)
         end
     end;
 
+    -- MODIFIED: Updated AddTab for top tabs
     function Window:AddTab(Name)
         local Tab = {
             Groupboxes = {};
@@ -5314,6 +5320,7 @@ function Library:CreateWindow(...)
             BackgroundColor3 = 'MainColor';
         });
 
+        -- Tab content frame
         local TabFrame = Library:Create('Frame', {
             Name = 'TabFrame',
             BackgroundTransparency = 1;
@@ -5324,6 +5331,7 @@ function Library:CreateWindow(...)
             Parent = TabContentContainer;
         });
 
+        -- Top warning bar (same as original)
         local TopBar, TopBarInner, TopBarLabel, TopBarTextLabel, TopBarLabelStroke, TopBarHighlight; 
         do
             TopBar = Library:Create('Frame', {
@@ -5404,6 +5412,7 @@ function Library:CreateWindow(...)
             });
         end
         
+        -- Left and right content sides (same as original)
         local LeftSide = Library:Create('ScrollingFrame', {
             BackgroundTransparency = 1;
             BorderSizePixel = 0;
@@ -6123,6 +6132,7 @@ function Library:CreateWindow(...)
             Library:Toggle()
         end)
 
+        -- Lock UI button
         local LockUIOuter = Library:Create('Frame', {
             BorderColor3 = Color3.new(0, 0, 0);
             Position = UDim2.new(0.008, 0, 0.075, 0);
