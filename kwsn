@@ -121,11 +121,9 @@
     )
 ]]
 
-
-
-
-
-
+-- ============================================
+-- MOBILE/TOUCH DETECTION & UI SCALING SYSTEM
+-- ============================================
 local MobileDetection = {
     IsMobile = false,
     IsTablet = false,
@@ -181,27 +179,19 @@ local MobileDetection = {
     end
 }
 
+-- Run detection immediately
 MobileDetection:Detect()
 
+-- Print detection result (optional - remove if you want)
 print(string.format("[Mobile] Touch: %s, Mobile: %s, Tablet: %s, Scale: %.2f", 
     MobileDetection.IsTouchDevice, 
     MobileDetection.IsMobile, 
     MobileDetection.IsTablet, 
     MobileDetection.ScaleFactor))
 
-
-local LoadingTick = os.clock()
-
-if getgenv().Library then
-    getgenv().Library:Unload()
-end
-
-
-
-
-
-
-
+-- ============================================
+-- END OF MOBILE DETECTION
+-- ============================================
 
 local LoadingTick = os.clock()
 
