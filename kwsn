@@ -121,78 +121,6 @@
     )
 ]]
 
--- ============================================
--- MOBILE/TOUCH DETECTION & UI SCALING SYSTEM
--- ============================================
-local MobileDetection = {
-    IsMobile = false,
-    IsTablet = false,
-    IsTouchDevice = false,
-    ScreenSize = Vector2.new(),
-    ScaleFactor = 1,
-    
-    PHONE_MAX_WIDTH = 600,
-    TABLET_MAX_WIDTH = 1024,
-    
-    Detect = function(self)
-        local UserInputService = game:GetService("UserInputService")
-        local Camera = game:GetService("Workspace").CurrentCamera
-        local ViewportSize = Camera and Camera.ViewportSize or Vector2.new(1920, 1080)
-        
-        self.ScreenSize = ViewportSize
-        self.IsTouchDevice = UserInputService.TouchEnabled
-        
-        if ViewportSize.X <= self.PHONE_MAX_WIDTH then
-            self.IsMobile = true
-            self.IsTablet = false
-            self.ScaleFactor = 0.65
-        elseif ViewportSize.X <= self.TABLET_MAX_WIDTH then
-            self.IsMobile = false
-            self.IsTablet = true
-            self.ScaleFactor = 0.85
-        else
-            self.IsMobile = false
-            self.IsTablet = false
-            self.ScaleFactor = 1
-        end
-        
-        return self
-    end,
-    
-    GetScale = function(self)
-        return self.ScaleFactor
-    end,
-    
-    IsTouchInput = function(self, Input)
-        if not Input then return false end
-        return Input.UserInputType == Enum.UserInputType.Touch or 
-               Input.UserInputType == Enum.UserInputType.MouseButton1
-    end,
-    
-    GetSafePadding = function(self)
-        if self.IsMobile then
-            return {Top = 25, Bottom = 10, Left = 5, Right = 5}
-        elseif self.IsTablet then
-            return {Top = 15, Bottom = 5, Left = 5, Right = 5}
-        end
-        return {Top = 0, Bottom = 0, Left = 0, Right = 0}
-    end
-}
-
--- Run detection immediately
-MobileDetection:Detect()
-
--- Print detection result (optional - remove if you want)
-print(string.format("[Mobile] Touch: %s, Mobile: %s, Tablet: %s, Scale: %.2f", 
-    MobileDetection.IsTouchDevice, 
-    MobileDetection.IsMobile, 
-    MobileDetection.IsTablet, 
-    MobileDetection.ScaleFactor))
-
--- ============================================
--- END OF MOBILE DETECTION
--- ============================================
-
 local LoadingTick = os.clock()
 
 if getgenv().Library then
@@ -1514,6 +1442,21 @@ local Library do
     local Camera = Workspace.CurrentCamera
     local Mouse = LocalPlayer:GetMouse()
 
+    -- Mobile/Touch Detection
+    local IsMobile = UserInputService.TouchEnabled and true or false
+    local ViewportSize = Camera.ViewportSize
+    local ScaleFactor = IsMobile and 0.5 or 1
+
+    -- Auto-size window based on device
+    local function GetAutoSize()
+        if IsMobile then
+            local width = ViewportSize.X * 0.85
+            local height = ViewportSize.Y * 0.75
+            return UDim2.new(0, width, 0, height)
+        end
+        return UDim2.new(0, 659, 0, 511)
+    end
+
     -- Globals
     local FromRGB = Color3.fromRGB
     local FromHSV = Color3.fromHSV
@@ -1557,8 +1500,6 @@ local Library do
     local Vector3New = Vector3.new
 
     local RectNew = Rect.new
-
-    local IsMobile = UserInputService.TouchEnabled or false
 
     gethui = gethui or function()
         return CoreGui
@@ -1998,7 +1939,7 @@ local Library do
                 BorderSizePixel = 0,
                 ZIndex = 2,
                 TextTransparency = 1,
-                TextSize = 14,
+                TextSize = IsMobile and 18 or 14,
                 BackgroundColor3 = FromRGB(255, 255, 255)
             })
 
@@ -2099,8 +2040,8 @@ local Library do
                 Image = "rbxassetid://7368471234",
 				AnchorPoint = Vector2New(1, 1),
 				BorderColor3 = FromRGB(0, 0, 0),
-				Size = UDim2New(0, 9, 0, 9),
-				Position = UDim2New(1, -4, 1, -4),
+				Size = UDim2New(0, IsMobile and 15 or 9, 0, IsMobile and 15 or 9),
+				Position = UDim2New(1, IsMobile and -8 or -4, 1, IsMobile and -8 or -4),
                 Name = "\0",
 				BorderSizePixel = 0,
 				BackgroundTransparency = 1,
@@ -2668,9 +2609,9 @@ local Library do
                     AutoButtonColor = false,
                     BackgroundTransparency = 1,
                     BorderSizePixel = 0,
-                    Size = UDim2New(1, 0, 0, 20),
+                    Size = UDim2New(1, 0, 0, IsMobile and 35 or 20),
                     ZIndex = 2,
-                    TextSize = 14,
+                    TextSize = IsMobile and 18 or 14,
                     BackgroundColor3 = FromRGB(255, 255, 255)
                 })
 
@@ -2682,14 +2623,14 @@ local Library do
                     TextTransparency = 0.5,
                     Text = Data.Name,
                     AutomaticSize = Enum.AutomaticSize.X,
-                    Size = UDim2New(0, 0, 0, 15),
+                    Size = UDim2New(0, 0, 0, IsMobile and 20 or 15),
                     AnchorPoint = Vector2New(0, 0.5),
                     BorderSizePixel = 0,
                     BackgroundTransparency = 1,
                     Position = UDim2New(0, 0, 0.5, 0),
                     BorderColor3 = FromRGB(0, 0, 0),
                     ZIndex = 2,
-                    TextSize = 14,
+                    TextSize = IsMobile and 18 or 14,
                     BackgroundColor3 = FromRGB(255, 255, 255)
                 })  Items["Text"]:AddToTheme({TextColor3 = "Text"})
 
@@ -2699,7 +2640,7 @@ local Library do
                     BorderColor3 = FromRGB(0, 0, 0),
                     AnchorPoint = Vector2New(1, 0.5),
                     Position = UDim2New(1, 0, 0.5, 0),
-                    Size = UDim2New(0, 20, 0, 20),
+                    Size = UDim2New(0, IsMobile and 35 or 20, 0, IsMobile and 35 or 20),
                     ZIndex = 2,
                     BorderSizePixel = 0,
                     BackgroundColor3 = FromRGB(34, 39, 45)
@@ -2761,7 +2702,7 @@ local Library do
                     BorderColor3 = FromRGB(0, 0, 0),
                     AnchorPoint = Vector2New(1, 0),
                     BackgroundTransparency = 1,
-                    Position = UDim2New(1, -24, 0, 0),
+                    Position = UDim2New(1, IsMobile and -40 or -24, 0, 0),
                     Size = UDim2New(0, 0, 1, 0),
                     BorderSizePixel = 0,
                     AutomaticSize = Enum.AutomaticSize.X,
@@ -2774,7 +2715,7 @@ local Library do
                     VerticalAlignment = Enum.VerticalAlignment.Center,
                     FillDirection = Enum.FillDirection.Horizontal,
                     HorizontalAlignment = Enum.HorizontalAlignment.Right,
-                    Padding = UDimNew(0, 6),
+                    Padding = UDimNew(0, IsMobile and 12 or 6),
                     SortOrder = Enum.SortOrder.LayoutOrder
                 })
             end
@@ -2873,7 +2814,7 @@ local Library do
                     Parent = Data.Parent.Instance,
                     Name = "\0",
                     BackgroundTransparency = 1,
-                    Size = UDim2New(1, 0, 0, 47),
+                    Size = UDim2New(1, 0, 0, IsMobile and 70 or 47),
                     BorderColor3 = FromRGB(0, 0, 0),
                     ZIndex = 2,
                     BorderSizePixel = 0,
@@ -2889,10 +2830,10 @@ local Library do
                     Text = Data.Name,
                     AutomaticSize = Enum.AutomaticSize.X,
                     BackgroundTransparency = 1,
-                    Size = UDim2New(0, 0, 0, 15),
+                    Size = UDim2New(0, 0, 0, IsMobile and 20 or 15),
                     BorderSizePixel = 0,
                     ZIndex = 2,
-                    TextSize = 14,
+                    TextSize = IsMobile and 18 or 14,
                     BackgroundColor3 = FromRGB(255, 255, 255)
                 })  Items["Text"]:AddToTheme({TextColor3 = "Text"})
 
@@ -2904,7 +2845,7 @@ local Library do
                     BorderColor3 = FromRGB(0, 0, 0),
                     AnchorPoint = Vector2New(0, 1),
                     Position = UDim2New(0, 0, 1, 0),
-                    Size = UDim2New(1, 0, 0, 25),
+                    Size = UDim2New(1, 0, 0, IsMobile and 35 or 25),
                     ZIndex = 2,
                     BorderSizePixel = 0,
                     BackgroundColor3 = FromRGB(34, 39, 45)
@@ -2933,14 +2874,14 @@ local Library do
                     BorderColor3 = FromRGB(0, 0, 0),
                     Text = "--",
                     AutomaticSize = Enum.AutomaticSize.X,
-                    Size = UDim2New(0, 0, 0, 15),
+                    Size = UDim2New(0, 0, 0, IsMobile and 20 or 15),
                     AnchorPoint = Vector2New(0, 0.5),
                     Position = UDim2New(0, 8, 0.5, 0),
                     BackgroundTransparency = 1,
                     TextTruncate = Enum.TextTruncate.AtEnd,
                     BorderSizePixel = 0,
                     ZIndex = 2,
-                    TextSize = 14,
+                    TextSize = IsMobile and 16 or 14,
                     BackgroundColor3 = FromRGB(255, 255, 255)
                 })  Items["Value"]:AddToTheme({TextColor3 = "Text"})
 
@@ -2950,7 +2891,7 @@ local Library do
                     ImageColor3 = FromRGB(196, 231, 255),
                     ScaleType = Enum.ScaleType.Fit,
                     BorderColor3 = FromRGB(0, 0, 0),
-                    Size = UDim2New(0, 20, 0, 20),
+                    Size = UDim2New(0, IsMobile and 30 or 20, 0, IsMobile and 30 or 20),
                     AnchorPoint = Vector2New(1, 0.5),
                     Image = "rbxassetid://114252321536924",
                     BackgroundTransparency = 1,
@@ -3006,7 +2947,7 @@ local Library do
                     Name = "\0",
                     Active = true,
                     AutomaticCanvasSize = Enum.AutomaticSize.Y,
-                    ScrollBarThickness = 2,
+                    ScrollBarThickness = IsMobile and 4 or 2,
                     BorderColor3 = FromRGB(0, 0, 0),
                     Size = UDim2New(1, -8, 1, -46),
                     CanvasSize = UDim2New(0, 0, 0, 0),
@@ -3040,7 +2981,7 @@ local Library do
                 Items["Search"] = Instances:Create("Frame", {
                     Parent = Items["OptionHolder"].Instance,
                     Name = "\0",
-                    Size = UDim2New(1, -16, 0, 25),
+                    Size = UDim2New(1, -16, 0, IsMobile and 35 or 25),
                     Position = UDim2New(0, 8, 0, 8),
                     BorderColor3 = FromRGB(0, 0, 0),
                     ZIndex = 5,
@@ -3077,7 +3018,7 @@ local Library do
                     ScaleType = Enum.ScaleType.Fit,
                     ImageTransparency = 0.5,
                     BorderColor3 = FromRGB(0, 0, 0),
-                    Size = UDim2New(0, 20, 0, 20),
+                    Size = UDim2New(0, IsMobile and 28 or 20, 0, IsMobile and 28 or 20),
                     AnchorPoint = Vector2New(0, 0.5),
                     Image = "rbxassetid://71924825350727",
                     BackgroundTransparency = 1,
@@ -3094,8 +3035,8 @@ local Library do
                     AnchorPoint = Vector2New(0, 0.5),
                     PlaceholderColor3 = FromRGB(185, 185, 185),
                     PlaceholderText = "search",
-                    TextSize = 14,
-                    Size = UDim2New(1, -45, 0, 15),
+                    TextSize = IsMobile and 18 or 14,
+                    Size = UDim2New(1, -45, 0, IsMobile and 20 or 15),
                     ClipsDescendants = true,
                     BorderColor3 = FromRGB(0, 0, 0),
                     Text = "",
@@ -3182,9 +3123,9 @@ local Library do
                     AutoButtonColor = false,
                     BackgroundTransparency = 1,
                     BorderSizePixel = 0,
-                    Size = UDim2New(1, -5, 0, 25),
+                    Size = UDim2New(1, -5, 0, IsMobile and 35 or 25),
                     ZIndex = 5,
-                    TextSize = 14,
+                    TextSize = IsMobile and 18 or 14,
                     BackgroundColor3 = FromRGB(16, 18, 21)
                 })  OptionButton:AddToTheme({BackgroundColor3 = "Background"})
 
@@ -3194,7 +3135,7 @@ local Library do
                     ImageColor3 = FromRGB(196, 231, 255),
                     ScaleType = Enum.ScaleType.Fit,
                     BorderColor3 = FromRGB(0, 0, 0),
-                    Size = UDim2New(0, 18, 0, 18),
+                    Size = UDim2New(0, IsMobile and 28 or 18, 0, IsMobile and 28 or 18),
                     Visible = true,
                     AnchorPoint = Vector2New(0, 0.5),
                     Image = "rbxassetid://116339777575852",
@@ -3219,15 +3160,15 @@ local Library do
                     TextTransparency = 0.5,
                     AnchorPoint = Vector2New(0, 0.5),
                     ZIndex = 5,
-                    TextSize = 14,
-                    Size = UDim2New(0, 0, 0, 15),
+                    TextSize = IsMobile and 18 or 14,
+                    Size = UDim2New(0, 0, 0, IsMobile and 20 or 15),
                     TextColor3 = FromRGB(255, 255, 255),
                     BorderColor3 = FromRGB(0, 0, 0),
                     Text = Option,
                     BackgroundTransparency = 1,
                     TextXAlignment = Enum.TextXAlignment.Left,
                     AutomaticSize = Enum.AutomaticSize.X,
-                    Position = UDim2New(0, 7, 0.5, 0),
+                    Position = UDim2New(0, IsMobile and 12 or 7, 0.5, 0),
                     BorderSizePixel = 0,
                     BackgroundColor3 = FromRGB(255, 255, 255)
                 })  OptionText:AddToTheme({TextColor3 = "Text"})
@@ -3261,11 +3202,11 @@ local Library do
                 function OptionData:Toggle(Status)
                     if Status == "Active" then 
                         OptionData.Button:Tween(nil, {BackgroundTransparency = 0})
-                        OptionData.Text:Tween(nil, {TextTransparency = 0, Position = UDim2New(0, 27, 0.5, 0)})
+                        OptionData.Text:Tween(nil, {TextTransparency = 0, Position = UDim2New(0, IsMobile and 42 or 27, 0.5, 0)})
                         OptionData.Check:Tween(nil, {ImageTransparency = 0})
                     elseif Status == "Inactive" then
                         OptionData.Button:Tween(nil, {BackgroundTransparency = 1})
-                        OptionData.Text:Tween(nil, {TextTransparency = 0.5, Position = UDim2New(0, 7, 0.5, 0)})
+                        OptionData.Text:Tween(nil, {TextTransparency = 0.5, Position = UDim2New(0, IsMobile and 12 or 7, 0.5, 0)})
                         OptionData.Check:Tween(nil, {ImageTransparency = 1})
                     end
                 end
@@ -3361,8 +3302,8 @@ local Library do
                     Items["Holder"].Instance.ZIndex = 11
 
                     RenderStepped = RunService.RenderStepped:Connect(function()
-                        Items["OptionHolder"].Instance.Position = UDim2New(0, Items["RealDropdown"].Instance.AbsolutePosition.X, 0, Items["RealDropdown"].Instance.AbsolutePosition.Y + 30)
-                        Items["OptionHolder"].Instance.Size = UDim2New(0, Items["RealDropdown"].Instance.AbsoluteSize.X, 0, Data.MaxSize or 165)
+                        Items["OptionHolder"].Instance.Position = UDim2New(0, Items["RealDropdown"].Instance.AbsolutePosition.X, 0, Items["RealDropdown"].Instance.AbsolutePosition.Y + (IsMobile and 45 or 30))
+                        Items["OptionHolder"].Instance.Size = UDim2New(0, Items["RealDropdown"].Instance.AbsoluteSize.X, 0, Data.MaxSize or (IsMobile and 200 or 165))
                     end)
 
                     for Index, Value in Library.OpenFrames do 
@@ -3529,8 +3470,8 @@ local Library do
                     AutoButtonColor = false,
                     AnchorPoint = Vector2New(1, 0.5),
                     BorderSizePixel = 0,
-                    Position = UDim2New(1, -25, 0, 0),
-                    Size = UDim2New(0, 20, 0, 20),
+                    Position = UDim2New(1, -(IsMobile and 40 or 25), 0, 0),
+                    Size = UDim2New(0, IsMobile and 35 or 20, 0, IsMobile and 35 or 20),
                     ZIndex = 2,
                     TextSize = 14,
                     BackgroundColor3 = FromRGB(255, 125, 32)
@@ -3542,11 +3483,11 @@ local Library do
                     local Column = Index % MaxButtonsAdded
                 
                     local ButtonSize = Items["ColorpickerButton"].Instance.AbsoluteSize
-                    local Spacing = 4
+                    local Spacing = IsMobile and 8 or 4
                 
                     local XPosition = (ButtonSize.X + Spacing) * Column - Spacing - ButtonSize.X
                 
-                    Items["ColorpickerButton"].Instance.Position = UDim2New(1, Data.IsToggle and XPosition - 24 or -XPosition, 0.5, 0)
+                    Items["ColorpickerButton"].Instance.Position = UDim2New(1, Data.IsToggle and XPosition - (IsMobile and 40 or 24) or -XPosition, 0.5, 0)
                 end
 
                 CalculateCount(Data.Count)
@@ -3590,8 +3531,8 @@ local Library do
                     Name = "\0",
                     Active = false,
                     Selectable = false,
-                    Size = UDim2New(0, 219, 0, 282),
-                    Position = UDim2New(0, Items["ColorpickerButton"].Instance.AbsolutePosition.X, 0, Items["ColorpickerButton"].Instance.AbsolutePosition.Y + 25),
+                    Size = UDim2New(0, IsMobile and 350 or 219, 0, IsMobile and 450 or 282),
+                    Position = UDim2New(0, Items["ColorpickerButton"].Instance.AbsolutePosition.X, 0, Items["ColorpickerButton"].Instance.AbsolutePosition.Y + (IsMobile and 45 or 25)),
                     BorderColor3 = FromRGB(0, 0, 0),
                     ZIndex = 2,
                     Visible = false,
@@ -3600,7 +3541,7 @@ local Library do
                 })  Items["ColorpickerWindow"]:AddToTheme({BackgroundColor3 = "Background"})
 
                 Items["ColorpickerWindow"]:MakeDraggable()
-                Items["ColorpickerWindow"]:MakeResizeable(Vector2New(219, 282), Vector2New(9999, 9999))
+                Items["ColorpickerWindow"]:MakeResizeable(Vector2New(IsMobile and 350 or 219, IsMobile and 450 or 282), Vector2New(9999, 9999))
 
                 Instances:Create("UIStroke", {
                     Parent = Items["ColorpickerWindow"].Instance,
@@ -3643,7 +3584,7 @@ local Library do
                     AutoButtonColor = false,
                     BorderSizePixel = 0,
                     Position = UDim2New(0, 8, 0, 8),
-                    Size = UDim2New(1, -16, 1, -125),
+                    Size = UDim2New(1, -16, 1, -(IsMobile and 180 or 125)),
                     ZIndex = 2,
                     TextSize = 14,
                     BackgroundColor3 = FromRGB(255, 125, 32)
@@ -3695,7 +3636,7 @@ local Library do
                 Items["PaletteDragger"] = Instances:Create("Frame", {
                     Parent = Items["Palette"].Instance,
                     Name = "\0",
-                    Size = UDim2New(0, 4, 0, 4),
+                    Size = UDim2New(0, IsMobile and 8 or 4, 0, IsMobile and 8 or 4),
                     Position = UDim2New(0, 5, 0, 5),
                     BorderColor3 = FromRGB(0, 0, 0),
                     ZIndex = 3,
@@ -3720,10 +3661,10 @@ local Library do
                     Parent = Items["ColorpickerWindow"].Instance,
                     Name = "\0",
                     BorderColor3 = FromRGB(0, 0, 0),
-                    Size = UDim2New(1, -16, 0, 18),
+                    Size = UDim2New(1, -16, 0, IsMobile and 28 or 18),
                     AutoButtonColor = false,
                     AnchorPoint = Vector2New(0, 1),
-                    Position = UDim2New(0, 8, 1, -90),
+                    Position = UDim2New(0, 8, 1, -(IsMobile and 130 or 90)),
                     Text = "",
                     ZIndex = 2,
                     BorderSizePixel = 0,
@@ -3776,8 +3717,8 @@ local Library do
                     Text = "",
                     AnchorPoint = Vector2New(0, 1),
                     BorderSizePixel = 0,
-                    Position = UDim2New(0, 8, 1, -63),
-                    Size = UDim2New(1, -16, 0, 18),
+                    Position = UDim2New(0, 8, 1, -(IsMobile and 95 or 63)),
+                    Size = UDim2New(1, -16, 0, IsMobile and 28 or 18),
                     ZIndex = 2,
                     TextSize = 14,
                     BackgroundColor3 = FromRGB(255, 125, 32)
@@ -3846,7 +3787,7 @@ local Library do
                         Name = "\0",
                         BackgroundTransparency = 1,
                         AnchorPoint = Vector2New(0, 1),
-                        Size = UDim2New(1, -16, 0, 47),
+                        Size = UDim2New(1, -16, 0, IsMobile and 70 or 47),
                         Position = UDim2New(0, 8, 1, -8),
                         BorderColor3 = FromRGB(0, 0, 0),
                         ZIndex = 2,
@@ -3863,10 +3804,10 @@ local Library do
                         Text = "animations",
                         AutomaticSize = Enum.AutomaticSize.X,
                         BackgroundTransparency = 1,
-                        Size = UDim2New(0, 0, 0, 15),
+                        Size = UDim2New(0, 0, 0, IsMobile and 20 or 15),
                         BorderSizePixel = 0,
                         ZIndex = 2,
-                        TextSize = 14,
+                        TextSize = IsMobile and 18 or 14,
                         BackgroundColor3 = FromRGB(255, 255, 255)
                     })  DropdownItems["Text"]:AddToTheme({TextColor3 = "Text"})
 
@@ -3878,7 +3819,7 @@ local Library do
                         BorderColor3 = FromRGB(0, 0, 0),
                         AnchorPoint = Vector2New(0, 1),
                         Position = UDim2New(0, 0, 1, 0),
-                        Size = UDim2New(1, 0, 0, 25),
+                        Size = UDim2New(1, 0, 0, IsMobile and 35 or 25),
                         ZIndex = 2,
                         BorderSizePixel = 0,
                         BackgroundColor3 = FromRGB(34, 39, 45)
@@ -3907,14 +3848,14 @@ local Library do
                         BorderColor3 = FromRGB(0, 0, 0),
                         Text = "--",
                         AutomaticSize = Enum.AutomaticSize.X,
-                        Size = UDim2New(0, 0, 0, 15),
+                        Size = UDim2New(0, 0, 0, IsMobile and 20 or 15),
                         AnchorPoint = Vector2New(0, 0.5),
                         Position = UDim2New(0, 8, 0.5, 0),
                         BackgroundTransparency = 1,
                         TextTruncate = Enum.TextTruncate.AtEnd,
                         BorderSizePixel = 0,
                         ZIndex = 2,
-                        TextSize = 14,
+                        TextSize = IsMobile and 16 or 14,
                         BackgroundColor3 = FromRGB(255, 255, 255)
                     })  DropdownItems["Value"]:AddToTheme({TextColor3 = "Text"})
 
@@ -3924,7 +3865,7 @@ local Library do
                         ImageColor3 = FromRGB(196, 231, 255),
                         ScaleType = Enum.ScaleType.Fit,
                         BorderColor3 = FromRGB(0, 0, 0),
-                        Size = UDim2New(0, 20, 0, 20),
+                        Size = UDim2New(0, IsMobile and 30 or 20, 0, IsMobile and 30 or 20),
                         AnchorPoint = Vector2New(1, 0.5),
                         Image = "rbxassetid://114252321536924",
                         BackgroundTransparency = 1,
@@ -4011,9 +3952,9 @@ local Library do
                         AutoButtonColor = false,
                         BackgroundTransparency = 1,
                         BorderSizePixel = 0,
-                        Size = UDim2New(1, 0, 0, 25),
+                        Size = UDim2New(1, 0, 0, IsMobile and 35 or 25),
                         ZIndex = 5,
-                        TextSize = 14,
+                        TextSize = IsMobile and 18 or 14,
                         BackgroundColor3 = FromRGB(16, 18, 21)
                     })  OptionButton:AddToTheme({BackgroundColor3 = "Background"})
 
@@ -4023,7 +3964,7 @@ local Library do
                         ImageColor3 = FromRGB(196, 231, 255),
                         ScaleType = Enum.ScaleType.Fit,
                         BorderColor3 = FromRGB(0, 0, 0),
-                        Size = UDim2New(0, 18, 0, 18),
+                        Size = UDim2New(0, IsMobile and 28 or 18, 0, IsMobile and 28 or 18),
                         Visible = true,
                         AnchorPoint = Vector2New(0, 0.5),
                         Image = "rbxassetid://116339777575852",
@@ -4048,15 +3989,15 @@ local Library do
                         TextTransparency = 0.5,
                         AnchorPoint = Vector2New(0, 0.5),
                         ZIndex = 5,
-                        TextSize = 14,
-                        Size = UDim2New(0, 0, 0, 15),
+                        TextSize = IsMobile and 18 or 14,
+                        Size = UDim2New(0, 0, 0, IsMobile and 20 or 15),
                         TextColor3 = FromRGB(255, 255, 255),
                         BorderColor3 = FromRGB(0, 0, 0),
                         Text = Option,
                         BackgroundTransparency = 1,
                         TextXAlignment = Enum.TextXAlignment.Left,
                         AutomaticSize = Enum.AutomaticSize.X,
-                        Position = UDim2New(0, 7, 0.5, 0),
+                        Position = UDim2New(0, IsMobile and 12 or 7, 0.5, 0),
                         BorderSizePixel = 0,
                         BackgroundColor3 = FromRGB(255, 255, 255)
                     })  OptionText:AddToTheme({TextColor3 = "Text"})
@@ -4072,11 +4013,11 @@ local Library do
                     function OptionData:Toggle(Status)
                         if Status == "Active" then 
                             OptionData.Button:Tween(nil, {BackgroundTransparency = 0})
-                            OptionData.Text:Tween(nil, {TextTransparency = 0, Position = UDim2New(0, 27, 0.5, 0)})
+                            OptionData.Text:Tween(nil, {TextTransparency = 0, Position = UDim2New(0, IsMobile and 42 or 27, 0.5, 0)})
                             OptionData.Check:Tween(nil, {ImageTransparency = 0})
                         elseif Status == "Inactive" then
                             OptionData.Button:Tween(nil, {BackgroundTransparency = 1})
-                            OptionData.Text:Tween(nil, {TextTransparency = 0.5, Position = UDim2New(0, 7, 0.5, 0)})
+                            OptionData.Text:Tween(nil, {TextTransparency = 0.5, Position = UDim2New(0, IsMobile and 12 or 7, 0.5, 0)})
                             OptionData.Check:Tween(nil, {ImageTransparency = 1})
                         end
                     end
@@ -4154,7 +4095,7 @@ local Library do
 
                         RenderStepped = RunService.RenderStepped:Connect(function()
                             DropdownItems["OptionHolder"].Instance.Position = UDim2New(0, DropdownItems["RealDropdown"].Instance.AbsolutePosition.X, 0,  DropdownItems["RealDropdown"].Instance.AbsolutePosition.Y + DropdownItems["RealDropdown"].Instance.AbsoluteSize.Y + 5)
-                            DropdownItems["OptionHolder"].Instance.Size = UDim2New(0, DropdownItems["RealDropdown"].Instance.AbsoluteSize.X, 0, 85)
+                            DropdownItems["OptionHolder"].Instance.Size = UDim2New(0, DropdownItems["RealDropdown"].Instance.AbsoluteSize.X, 0, IsMobile and 125 or 85)
                         end)
                     else
                         if RenderStepped then
@@ -4319,7 +4260,7 @@ local Library do
 
                 if Bool then 
                     Items["ColorpickerWindow"].Instance.Visible = true
-                    Items["ColorpickerWindow"].Instance.Position = UDim2New(0, Items["ColorpickerButton"].Instance.AbsolutePosition.X, 0, Items["ColorpickerButton"].Instance.AbsolutePosition.Y + 25)
+                    Items["ColorpickerWindow"].Instance.Position = UDim2New(0, Items["ColorpickerButton"].Instance.AbsolutePosition.X, 0, Items["ColorpickerButton"].Instance.AbsolutePosition.Y + (IsMobile and 45 or 25))
                     
                     for Index, Value in Library.OpenFrames do 
                         if Value.Type == "Colorpicker" then 
@@ -4624,12 +4565,12 @@ local Library do
                     AutomaticSize = Enum.AutomaticSize.X,
                     AutoButtonColor = false,
                     AnchorPoint = Vector2New(1, 0.5),
-                    Size = UDim2New(0, 0, 0, 15),
+                    Size = UDim2New(0, 0, 0, IsMobile and 20 or 15),
                     BackgroundTransparency = 1,
-                    Position = UDim2New(1, Data.IsToggle and -25 or 0, 0.5, 0),
+                    Position = UDim2New(1, Data.IsToggle and -(IsMobile and 40 or 25) or 0, 0.5, 0),
                     BorderColor3 = FromRGB(0, 0, 0),
                     ZIndex = 2,
-                    TextSize = 14,
+                    TextSize = IsMobile and 18 or 14,
                     BackgroundColor3 = FromRGB(255, 255, 255)
                 })  Items["KeyButton"]:AddToTheme({TextColor3 = "Text"})
 
@@ -4643,10 +4584,10 @@ local Library do
                 Items["KeybindWindow"] = Instances:Create("Frame", {
                     Parent = Library.Holder.Instance,
                     Name = "\0",
-                    Position = UDim2New(0, Items["KeyButton"].Instance.AbsolutePosition.X, 0, Items["KeyButton"].Instance.AbsolutePosition.Y + 25),
+                    Position = UDim2New(0, Items["KeyButton"].Instance.AbsolutePosition.X, 0, Items["KeyButton"].Instance.AbsolutePosition.Y + (IsMobile and 40 or 25)),
                     BorderColor3 = FromRGB(0, 0, 0),
                     Visible = false,
-                    Size = UDim2New(0, 195, 0, 93),
+                    Size = UDim2New(0, IsMobile and 300 or 195, 0, IsMobile and 150 or 93),
                     BorderSizePixel = 0,
                     BackgroundColor3 = FromRGB(16, 18, 21)
                 })  Items["KeybindWindow"]:AddToTheme({BackgroundColor3 = "Background"})
@@ -4666,7 +4607,7 @@ local Library do
                 })
 
                 Items["KeybindWindow"]:MakeDraggable()
-                Items["KeybindWindow"]:MakeResizeable(Vector2New(155, 93), Vector2New(9999, 9999))
+                Items["KeybindWindow"]:MakeResizeable(Vector2New(IsMobile and 250 or 155, IsMobile and 120 or 93), Vector2New(9999, 9999))
 
                 local DropdownItems = { } do
                     DropdownItems["Dropdown"] = Instances:Create("Frame", {
@@ -4674,7 +4615,7 @@ local Library do
                         Name = "\0",
                         BackgroundTransparency = 1,
                         AnchorPoint = Vector2New(0, 0),
-                        Size = UDim2New(1, -16, 0, 47),
+                        Size = UDim2New(1, -16, 0, IsMobile and 70 or 47),
                         Position = UDim2New(0, 8, 0, 8),
                         BorderColor3 = FromRGB(0, 0, 0),
                         ZIndex = 2,
@@ -4691,10 +4632,10 @@ local Library do
                         Text = "mode",
                         AutomaticSize = Enum.AutomaticSize.X,
                         BackgroundTransparency = 1,
-                        Size = UDim2New(0, 0, 0, 15),
+                        Size = UDim2New(0, 0, 0, IsMobile and 20 or 15),
                         BorderSizePixel = 0,
                         ZIndex = 2,
-                        TextSize = 14,
+                        TextSize = IsMobile and 18 or 14,
                         BackgroundColor3 = FromRGB(255, 255, 255)
                     })  DropdownItems["Text"]:AddToTheme({TextColor3 = "Text"})
 
@@ -4706,7 +4647,7 @@ local Library do
                         BorderColor3 = FromRGB(0, 0, 0),
                         AnchorPoint = Vector2New(0, 1),
                         Position = UDim2New(0, 0, 1, 0),
-                        Size = UDim2New(1, 0, 0, 25),
+                        Size = UDim2New(1, 0, 0, IsMobile and 35 or 25),
                         ZIndex = 2,
                         BorderSizePixel = 0,
                         BackgroundColor3 = FromRGB(34, 39, 45)
@@ -4735,14 +4676,14 @@ local Library do
                         BorderColor3 = FromRGB(0, 0, 0),
                         Text = "--",
                         AutomaticSize = Enum.AutomaticSize.X,
-                        Size = UDim2New(0, 0, 0, 15),
+                        Size = UDim2New(0, 0, 0, IsMobile and 20 or 15),
                         AnchorPoint = Vector2New(0, 0.5),
                         Position = UDim2New(0, 8, 0.5, 0),
                         BackgroundTransparency = 1,
                         TextTruncate = Enum.TextTruncate.AtEnd,
                         BorderSizePixel = 0,
                         ZIndex = 2,
-                        TextSize = 14,
+                        TextSize = IsMobile and 16 or 14,
                         BackgroundColor3 = FromRGB(255, 255, 255)
                     })  DropdownItems["Value"]:AddToTheme({TextColor3 = "Text"})
 
@@ -4752,7 +4693,7 @@ local Library do
                         ImageColor3 = FromRGB(196, 231, 255),
                         ScaleType = Enum.ScaleType.Fit,
                         BorderColor3 = FromRGB(0, 0, 0),
-                        Size = UDim2New(0, 20, 0, 20),
+                        Size = UDim2New(0, IsMobile and 30 or 20, 0, IsMobile and 30 or 20),
                         AnchorPoint = Vector2New(1, 0.5),
                         Image = "rbxassetid://114252321536924",
                         BackgroundTransparency = 1,
@@ -4839,9 +4780,9 @@ local Library do
                         AutoButtonColor = false,
                         BackgroundTransparency = 1,
                         BorderSizePixel = 0,
-                        Size = UDim2New(1, 0, 0, 25),
+                        Size = UDim2New(1, 0, 0, IsMobile and 35 or 25),
                         ZIndex = 5,
-                        TextSize = 14,
+                        TextSize = IsMobile and 18 or 14,
                         BackgroundColor3 = FromRGB(16, 18, 21)
                     })  OptionButton:AddToTheme({BackgroundColor3 = "Background"})
 
@@ -4851,7 +4792,7 @@ local Library do
                         ImageColor3 = FromRGB(196, 231, 255),
                         ScaleType = Enum.ScaleType.Fit,
                         BorderColor3 = FromRGB(0, 0, 0),
-                        Size = UDim2New(0, 18, 0, 18),
+                        Size = UDim2New(0, IsMobile and 28 or 18, 0, IsMobile and 28 or 18),
                         Visible = true,
                         AnchorPoint = Vector2New(0, 0.5),
                         Image = "rbxassetid://116339777575852",
@@ -4876,15 +4817,15 @@ local Library do
                         TextTransparency = 0.5,
                         AnchorPoint = Vector2New(0, 0.5),
                         ZIndex = 5,
-                        TextSize = 14,
-                        Size = UDim2New(0, 0, 0, 15),
+                        TextSize = IsMobile and 18 or 14,
+                        Size = UDim2New(0, 0, 0, IsMobile and 20 or 15),
                         TextColor3 = FromRGB(255, 255, 255),
                         BorderColor3 = FromRGB(0, 0, 0),
                         Text = Option,
                         BackgroundTransparency = 1,
                         TextXAlignment = Enum.TextXAlignment.Left,
                         AutomaticSize = Enum.AutomaticSize.X,
-                        Position = UDim2New(0, 7, 0.5, 0),
+                        Position = UDim2New(0, IsMobile and 12 or 7, 0.5, 0),
                         BorderSizePixel = 0,
                         BackgroundColor3 = FromRGB(255, 255, 255)
                     })  OptionText:AddToTheme({TextColor3 = "Text"})
@@ -4900,11 +4841,11 @@ local Library do
                     function OptionData:Toggle(Status)
                         if Status == "Active" then 
                             OptionData.Button:Tween(nil, {BackgroundTransparency = 0})
-                            OptionData.Text:Tween(nil, {TextTransparency = 0, Position = UDim2New(0, 27, 0.5, 0)})
+                            OptionData.Text:Tween(nil, {TextTransparency = 0, Position = UDim2New(0, IsMobile and 42 or 27, 0.5, 0)})
                             OptionData.Check:Tween(nil, {ImageTransparency = 0})
                         elseif Status == "Inactive" then
                             OptionData.Button:Tween(nil, {BackgroundTransparency = 1})
-                            OptionData.Text:Tween(nil, {TextTransparency = 0.5, Position = UDim2New(0, 7, 0.5, 0)})
+                            OptionData.Text:Tween(nil, {TextTransparency = 0.5, Position = UDim2New(0, IsMobile and 12 or 7, 0.5, 0)})
                             OptionData.Check:Tween(nil, {ImageTransparency = 1})
                         end
                     end
@@ -5046,7 +4987,7 @@ local Library do
 
                         RenderStepped = RunService.RenderStepped:Connect(function()
                             DropdownItems["OptionHolder"].Instance.Position = UDim2New(0, DropdownItems["RealDropdown"].Instance.AbsolutePosition.X, 0,  DropdownItems["RealDropdown"].Instance.AbsolutePosition.Y + DropdownItems["RealDropdown"].Instance.AbsoluteSize.Y + 5)
-                            DropdownItems["OptionHolder"].Instance.Size = UDim2New(0, DropdownItems["RealDropdown"].Instance.AbsoluteSize.X, 0, 85)
+                            DropdownItems["OptionHolder"].Instance.Size = UDim2New(0, DropdownItems["RealDropdown"].Instance.AbsoluteSize.X, 0, IsMobile and 125 or 85)
                         end)
                     else
                         if RenderStepped then
@@ -5106,8 +5047,8 @@ local Library do
                         AutoButtonColor = false,
                         BackgroundTransparency = 1,
                         BorderSizePixel = 0,
-                        Position = UDim2New(0, 8, 0, 65),
-                        Size = UDim2New(1, -16, 0, 20),
+                        Position = UDim2New(0, 8, 0, IsMobile and 105 or 65),
+                        Size = UDim2New(1, -16, 0, IsMobile and 30 or 20),
                         ZIndex = 2,
                         TextSize = 14,
                         BackgroundColor3 = FromRGB(255, 255, 255)
@@ -5121,14 +5062,14 @@ local Library do
                         TextTransparency = 0.5,
                         Text = "show in keybind list",
                         AutomaticSize = Enum.AutomaticSize.X,
-                        Size = UDim2New(0, 0, 0, 15),
+                        Size = UDim2New(0, 0, 0, IsMobile and 20 or 15),
                         AnchorPoint = Vector2New(0, 0.5),
                         BorderSizePixel = 0,
                         BackgroundTransparency = 1,
                         Position = UDim2New(0, 0, 0.5, 0),
                         BorderColor3 = FromRGB(0, 0, 0),
                         ZIndex = 2,
-                        TextSize = 14,
+                        TextSize = IsMobile and 16 or 14,
                         BackgroundColor3 = FromRGB(255, 255, 255)
                     })  ToggleItems["Text"]:AddToTheme({TextColor3 = "Text"})
 
@@ -5138,7 +5079,7 @@ local Library do
                         BorderColor3 = FromRGB(0, 0, 0),
                         AnchorPoint = Vector2New(1, 0.5),
                         Position = UDim2New(1, 0, 0.5, 0),
-                        Size = UDim2New(0, 20, 0, 20),
+                        Size = UDim2New(0, IsMobile and 35 or 20, 0, IsMobile and 35 or 20),
                         ZIndex = 2,
                         BorderSizePixel = 0,
                         BackgroundColor3 = FromRGB(34, 39, 45)
@@ -5287,7 +5228,7 @@ local Library do
 
                 if Bool then 
                     Items["KeybindWindow"].Instance.Visible = true
-                    Items["KeybindWindow"].Instance.Position = UDim2New(0, Items["KeyButton"].Instance.AbsolutePosition.X, 0, Items["KeyButton"].Instance.AbsolutePosition.Y + 25)
+                    Items["KeybindWindow"].Instance.Position = UDim2New(0, Items["KeyButton"].Instance.AbsolutePosition.X, 0, Items["KeyButton"].Instance.AbsolutePosition.Y + (IsMobile and 40 or 25))
 
                     for Index, Value in Library.OpenFrames do 
                         if Value.Type == "Keybind" then 
@@ -7312,10 +7253,8 @@ local Library do
                 Logo = Data.Logo or Data.logo or "135215559087473",
                 FadeSpeed = Data.FadeSpeed or Data.fadespeed or 0.2,
                 Version = Data.Version or Data.version or "v1.0.0 alpha",
-Size = (not MobileDetection.IsTouchDevice and UDim2New(0, 659, 0, 511)) or 
-       (MobileDetection.IsMobile and UDim2New(0, 450, 0, 350)) or 
-       (MobileDetection.IsTablet and UDim2New(0, 550, 0, 420)) or 
-       UDim2New(0, 511, 0, 459),
+                Size = Data.Size or Data.size or GetAutoSize(),
+
                 Pages = { },
                 SubPages = { },
 
@@ -7353,7 +7292,7 @@ Size = (not MobileDetection.IsTouchDevice and UDim2New(0, 659, 0, 511)) or
                     AnchorPoint = Vector2New(0.5, 0),
                     BorderSizePixel = 0,
                     Position = UDim2New(0.5, 0, 1, 8),
-                    Size = UDim2New(0, 0, 0, 45),
+                    Size = UDim2New(0, 0, 0, IsMobile and 65 or 45),
                     ZIndex = 2,
                     AutomaticSize = Enum.AutomaticSize.X,
                     BackgroundColor3 = FromRGB(16, 18, 21)
@@ -7699,9 +7638,9 @@ Size = (not MobileDetection.IsTouchDevice and UDim2New(0, 659, 0, 511)) or
                         Text = "",
                         AutoButtonColor = false,
                         Name = "\0",
-                        Position = UDim2New(0, 125, 0, 125),
+                        Position = UDim2New(0, ViewportSize.X - 70, 0, ViewportSize.Y - 100),
                         BorderColor3 = FromRGB(0, 0, 0),
-                        Size = UDim2New(0, 50, 0, 50),
+                        Size = UDim2New(0, 60, 0, 60),
                         BorderSizePixel = 0,
                         ZIndex = 127,
                         BackgroundColor3 = Library.Theme.Background
@@ -7968,10 +7907,10 @@ Size = (not MobileDetection.IsTouchDevice and UDim2New(0, 659, 0, 511)) or
                     Text = "",
                     AutoButtonColor = false,
                     BackgroundTransparency = 1,
-                    Size = UDim2New(0, 0, 0, 32),
+                    Size = UDim2New(0, 0, 0, IsMobile and 50 or 32),
                     BorderSizePixel = 0,
                     ZIndex = 2,
-                    TextSize = 14,
+                    TextSize = IsMobile and 18 or 14,
                     BackgroundColor3 = FromRGB(23, 26, 30)
                 })  Items["Inactive"]:AddToTheme({BackgroundColor3 = "Inline"})
 
@@ -7986,7 +7925,7 @@ Size = (not MobileDetection.IsTouchDevice and UDim2New(0, 659, 0, 511)) or
                     Name = "\0",
                     ImageTransparency = 0.5,
                     BorderColor3 = FromRGB(0, 0, 0),
-                    Size = UDim2New(0, 22, 0, 22),
+                    Size = UDim2New(0, IsMobile and 35 or 22, 0, IsMobile and 35 or 22),
                     AnchorPoint = Vector2New(0, 0.5),
                     Image = "rbxassetid://"..Page.Icon,
                     BackgroundTransparency = 1,
@@ -8004,13 +7943,13 @@ Size = (not MobileDetection.IsTouchDevice and UDim2New(0, 659, 0, 511)) or
                     Active = true,
                     AnchorPoint = Vector2New(0, 0.5),
                     ZIndex = 2,
-                    TextSize = 14,
-                    Size = UDim2New(0, 0, 0, 15),
+                    TextSize = IsMobile and 18 or 14,
+                    Size = UDim2New(0, 0, 0, IsMobile and 25 or 15),
                     TextColor3 = FromRGB(255, 255, 255),
                     BorderColor3 = FromRGB(0, 0, 0),
                     Text = Page.Name,
                     BackgroundTransparency = 1,
-                    Position = UDim2New(0, 32, 0.5, 0),
+                    Position = UDim2New(0, IsMobile and 45 or 32, 0.5, 0),
                     AutomaticSize = Enum.AutomaticSize.X,
                     BorderSizePixel = 0,
                     BackgroundColor3 = FromRGB(255, 255, 255)
@@ -8067,7 +8006,7 @@ Size = (not MobileDetection.IsTouchDevice and UDim2New(0, 659, 0, 511)) or
                         AnchorPoint = Vector2New(0.5, 1),
                         BorderSizePixel = 0,
                         Position = UDim2New(0.5, 0, 1, -8),
-                        Size = UDim2New(0, 0, 0, 45),
+                        Size = UDim2New(0, 0, 0, IsMobile and 65 or 45),
                         ZIndex = 2,
                         AutomaticSize = Enum.AutomaticSize.X,
                         BackgroundColor3 = FromRGB(22, 25, 29)
@@ -8107,7 +8046,7 @@ Size = (not MobileDetection.IsTouchDevice and UDim2New(0, 659, 0, 511)) or
                     })
                 end
 
-                Items["Inactive"].Instance.Size = UDim2New(0, 25, 0, 32)
+                Items["Inactive"].Instance.Size = UDim2New(0, IsMobile and 40 or 25, 0, IsMobile and 50 or 32)
             end
 
             local Debounce = false
@@ -8125,14 +8064,14 @@ Size = (not MobileDetection.IsTouchDevice and UDim2New(0, 659, 0, 511)) or
 
                 if Bool then
                     Items["Text"].Instance.Visible = true 
-                    Items["Inactive"]:Tween(nil, {BackgroundTransparency = 0, Size = UDim2New(0, Items["Text"].Instance.TextBounds.X + 38, 0, 32)})
+                    Items["Inactive"]:Tween(nil, {BackgroundTransparency = 0, Size = UDim2New(0, Items["Text"].Instance.TextBounds.X + (IsMobile and 60 or 38), 0, IsMobile and 50 or 32)})
                     Items["Icon"]:ChangeItemTheme({ImageColor3 = "Accent"})
                     Items["Icon"]:Tween(nil, {ImageColor3 = Library.Theme.Accent, ImageTransparency = 0})
 
                     Library.CurrentPage = Page
                 else
                     Items["Text"].Instance.Visible = false 
-                    Items["Inactive"]:Tween(nil, {BackgroundTransparency = 1, Size = UDim2New(0, 25, 0, 32)})
+                    Items["Inactive"]:Tween(nil, {BackgroundTransparency = 1, Size = UDim2New(0, IsMobile and 40 or 25, 0, IsMobile and 50 or 32)})
                     Items["Icon"]:ChangeItemTheme({ImageColor3 = "Image"})
                     Items["Icon"]:Tween(nil, {ImageColor3 = Library.Theme.Image, ImageTransparency = 0.5}) 
                 end
@@ -8228,10 +8167,10 @@ Size = (not MobileDetection.IsTouchDevice and UDim2New(0, 659, 0, 511)) or
                     AutoButtonColor = false,
                     AutomaticSize = Enum.AutomaticSize.X,
                     BackgroundTransparency = 1,
-                    Size = UDim2New(0, 0, 0, 32),
+                    Size = UDim2New(0, 0, 0, IsMobile and 50 or 32),
                     BorderSizePixel = 0,
                     ZIndex = 2,
-                    TextSize = 14,
+                    TextSize = IsMobile and 18 or 14,
                     BackgroundColor3 = FromRGB(16, 18, 21)
                 })  Items["Inactive"]:AddToTheme({BackgroundColor3 = "Background"})
 
@@ -8246,7 +8185,7 @@ Size = (not MobileDetection.IsTouchDevice and UDim2New(0, 659, 0, 511)) or
                     Name = "\0",
                     ImageTransparency = 0.5,
                     BorderColor3 = FromRGB(0, 0, 0),
-                    Size = UDim2New(0, 22, 0, 22),
+                    Size = UDim2New(0, IsMobile and 35 or 22, 0, IsMobile and 35 or 22),
                     AnchorPoint = Vector2New(0, 0.5),
                     Image = "rbxassetid://"..SubPage.Icon,
                     BackgroundTransparency = 1,
@@ -8264,13 +8203,13 @@ Size = (not MobileDetection.IsTouchDevice and UDim2New(0, 659, 0, 511)) or
                     Active = true,
                     AnchorPoint = Vector2New(0, 0.5),
                     ZIndex = 2,
-                    TextSize = 14,
-                    Size = UDim2New(0, 0, 0, 15),
+                    TextSize = IsMobile and 18 or 14,
+                    Size = UDim2New(0, 0, 0, IsMobile and 25 or 15),
                     TextColor3 = FromRGB(255, 255, 255),
                     BorderColor3 = FromRGB(0, 0, 0),
                     Text = SubPage.Name,
                     BackgroundTransparency = 1,
-                    Position = UDim2New(0, 32, 0.5, 0),
+                    Position = UDim2New(0, IsMobile and 45 or 32, 0.5, 0),
                     AutomaticSize = Enum.AutomaticSize.X,
                     BorderSizePixel = 0,
                     BackgroundColor3 = FromRGB(255, 255, 255)
@@ -8331,14 +8270,14 @@ Size = (not MobileDetection.IsTouchDevice and UDim2New(0, 659, 0, 511)) or
 
                 if Bool then
                     Items["Text"].Instance.Visible = true 
-                    Items["Inactive"]:Tween(nil, {BackgroundTransparency = 0, Size = UDim2New(0, Items["Text"].Instance.TextBounds.X + 38, 0, 32)})
+                    Items["Inactive"]:Tween(nil, {BackgroundTransparency = 0, Size = UDim2New(0, Items["Text"].Instance.TextBounds.X + (IsMobile and 60 or 38), 0, IsMobile and 50 or 32)})
                     Items["Icon"]:ChangeItemTheme({ImageColor3 = "Accent"})
                     Items["Icon"]:Tween(nil, {ImageColor3 = Library.Theme.Accent, ImageTransparency = 0}) 
 
                     Library.CurrentPage = SubPage
                 else
                     Items["Text"].Instance.Visible = false 
-                    Items["Inactive"]:Tween(nil, {BackgroundTransparency = 1, Size = UDim2New(0, 25, 0, 32)})
+                    Items["Inactive"]:Tween(nil, {BackgroundTransparency = 1, Size = UDim2New(0, IsMobile and 40 or 25, 0, IsMobile and 50 or 32)})
                     Items["Icon"]:ChangeItemTheme({ImageColor3 = "Image"})
                     Items["Icon"]:Tween(nil, {ImageColor3 = Library.Theme.Image, ImageTransparency = 0.5}) 
                 end
@@ -8443,7 +8382,7 @@ Size = (not MobileDetection.IsTouchDevice and UDim2New(0, 659, 0, 511)) or
                     ScrollBarImageColor3 = FromRGB(32, 36, 42),
                     MidImage = "rbxassetid://107505658214891",
                     BorderColor3 = FromRGB(0, 0, 0),
-                    ScrollBarThickness = 2,
+                    ScrollBarThickness = IsMobile and 4 or 2,
                     Size = UDim2New(1, -8, 1, 0),
                     BackgroundTransparency = 1,
                     Position = UDim2New(0, 4, 0, 4),
@@ -8546,7 +8485,7 @@ Size = (not MobileDetection.IsTouchDevice and UDim2New(0, 659, 0, 511)) or
                         Name = "\0",
                         BackgroundTransparency = 1,
                         AnchorPoint = Vector2New(1, 1),
-                        Size = UDim2New(0, 235, 0, 47),
+                        Size = UDim2New(0, 235, 0, IsMobile and 70 or 47),
                         Position = UDim2New(1, -8, 1, -20),
                         BorderColor3 = FromRGB(0, 0, 0),
                         ZIndex = 2,
@@ -8563,10 +8502,10 @@ Size = (not MobileDetection.IsTouchDevice and UDim2New(0, 659, 0, 511)) or
                         Text = "Status",
                         AutomaticSize = Enum.AutomaticSize.X,
                         BackgroundTransparency = 1,
-                        Size = UDim2New(0, 0, 0, 15),
+                        Size = UDim2New(0, 0, 0, IsMobile and 20 or 15),
                         BorderSizePixel = 0,
                         ZIndex = 2,
-                        TextSize = 14,
+                        TextSize = IsMobile and 18 or 14,
                         BackgroundColor3 = FromRGB(255, 255, 255)
                     })  DropdownItems["Text"]:AddToTheme({TextColor3 = "Text"})
 
@@ -8578,7 +8517,7 @@ Size = (not MobileDetection.IsTouchDevice and UDim2New(0, 659, 0, 511)) or
                         BorderColor3 = FromRGB(0, 0, 0),
                         AnchorPoint = Vector2New(0, 1),
                         Position = UDim2New(0, 0, 1, 0),
-                        Size = UDim2New(1, 0, 0, 25),
+                        Size = UDim2New(1, 0, 0, IsMobile and 35 or 25),
                         ZIndex = 2,
                         BorderSizePixel = 0,
                         BackgroundColor3 = FromRGB(34, 39, 45)
@@ -8607,14 +8546,14 @@ Size = (not MobileDetection.IsTouchDevice and UDim2New(0, 659, 0, 511)) or
                         BorderColor3 = FromRGB(0, 0, 0),
                         Text = "--",
                         AutomaticSize = Enum.AutomaticSize.X,
-                        Size = UDim2New(0, 0, 0, 15),
+                        Size = UDim2New(0, 0, 0, IsMobile and 20 or 15),
                         AnchorPoint = Vector2New(0, 0.5),
                         Position = UDim2New(0, 8, 0.5, 0),
                         BackgroundTransparency = 1,
                         TextTruncate = Enum.TextTruncate.AtEnd,
                         BorderSizePixel = 0,
                         ZIndex = 2,
-                        TextSize = 14,
+                        TextSize = IsMobile and 16 or 14,
                         BackgroundColor3 = FromRGB(255, 255, 255)
                     })  DropdownItems["Value"]:AddToTheme({TextColor3 = "Text"})
 
@@ -8624,7 +8563,7 @@ Size = (not MobileDetection.IsTouchDevice and UDim2New(0, 659, 0, 511)) or
                         ImageColor3 = FromRGB(196, 231, 255),
                         ScaleType = Enum.ScaleType.Fit,
                         BorderColor3 = FromRGB(0, 0, 0),
-                        Size = UDim2New(0, 20, 0, 20),
+                        Size = UDim2New(0, IsMobile and 30 or 20, 0, IsMobile and 30 or 20),
                         AnchorPoint = Vector2New(1, 0.5),
                         Image = "rbxassetid://114252321536924",
                         BackgroundTransparency = 1,
@@ -8718,9 +8657,9 @@ Size = (not MobileDetection.IsTouchDevice and UDim2New(0, 659, 0, 511)) or
                         AutoButtonColor = false,
                         BackgroundTransparency = 1,
                         BorderSizePixel = 0,
-                        Size = UDim2New(1, 0, 0, 25),
+                        Size = UDim2New(1, 0, 0, IsMobile and 35 or 25),
                         ZIndex = 5,
-                        TextSize = 14,
+                        TextSize = IsMobile and 18 or 14,
                         BackgroundColor3 = FromRGB(16, 18, 21)
                     })  OptionButton:AddToTheme({BackgroundColor3 = "Background"})
 
@@ -8730,7 +8669,7 @@ Size = (not MobileDetection.IsTouchDevice and UDim2New(0, 659, 0, 511)) or
                         ImageColor3 = FromRGB(196, 231, 255),
                         ScaleType = Enum.ScaleType.Fit,
                         BorderColor3 = FromRGB(0, 0, 0),
-                        Size = UDim2New(0, 18, 0, 18),
+                        Size = UDim2New(0, IsMobile and 28 or 18, 0, IsMobile and 28 or 18),
                         Visible = true,
                         AnchorPoint = Vector2New(0, 0.5),
                         Image = "rbxassetid://116339777575852",
@@ -8755,15 +8694,15 @@ Size = (not MobileDetection.IsTouchDevice and UDim2New(0, 659, 0, 511)) or
                         TextTransparency = 0.5,
                         AnchorPoint = Vector2New(0, 0.5),
                         ZIndex = 5,
-                        TextSize = 14,
-                        Size = UDim2New(0, 0, 0, 15),
+                        TextSize = IsMobile and 18 or 14,
+                        Size = UDim2New(0, 0, 0, IsMobile and 20 or 15),
                         TextColor3 = FromRGB(255, 255, 255),
                         BorderColor3 = FromRGB(0, 0, 0),
                         Text = Option,
                         BackgroundTransparency = 1,
                         TextXAlignment = Enum.TextXAlignment.Left,
                         AutomaticSize = Enum.AutomaticSize.X,
-                        Position = UDim2New(0, 7, 0.5, 0),
+                        Position = UDim2New(0, IsMobile and 12 or 7, 0.5, 0),
                         BorderSizePixel = 0,
                         BackgroundColor3 = FromRGB(255, 255, 255)
                     })  OptionText:AddToTheme({TextColor3 = "Text"})
@@ -8779,11 +8718,11 @@ Size = (not MobileDetection.IsTouchDevice and UDim2New(0, 659, 0, 511)) or
                     function OptionData:Toggle(Status)
                         if Status == "Active" then 
                             OptionData.Button:Tween(nil, {BackgroundTransparency = 0})
-                            OptionData.Text:Tween(nil, {TextTransparency = 0, Position = UDim2New(0, 27, 0.5, 0)})
+                            OptionData.Text:Tween(nil, {TextTransparency = 0, Position = UDim2New(0, IsMobile and 42 or 27, 0.5, 0)})
                             OptionData.Check:Tween(nil, {ImageTransparency = 0})
                         elseif Status == "Inactive" then
                             OptionData.Button:Tween(nil, {BackgroundTransparency = 1})
-                            OptionData.Text:Tween(nil, {TextTransparency = 0.5, Position = UDim2New(0, 7, 0.5, 0)})
+                            OptionData.Text:Tween(nil, {TextTransparency = 0.5, Position = UDim2New(0, IsMobile and 12 or 7, 0.5, 0)})
                             OptionData.Check:Tween(nil, {ImageTransparency = 1})
                         end
                     end
@@ -8857,7 +8796,7 @@ Size = (not MobileDetection.IsTouchDevice and UDim2New(0, 659, 0, 511)) or
 
                         RenderStepped = RunService.RenderStepped:Connect(function()
                             DropdownItems["OptionHolder"].Instance.Position = UDim2New(0, DropdownItems["RealDropdown"].Instance.AbsolutePosition.X, 0,  DropdownItems["RealDropdown"].Instance.AbsolutePosition.Y + DropdownItems["RealDropdown"].Instance.AbsoluteSize.Y + 5)
-                            DropdownItems["OptionHolder"].Instance.Size = UDim2New(0, DropdownItems["RealDropdown"].Instance.AbsoluteSize.X, 0, 85)
+                            DropdownItems["OptionHolder"].Instance.Size = UDim2New(0, DropdownItems["RealDropdown"].Instance.AbsoluteSize.X, 0, IsMobile and 125 or 85)
                         end)
                     else
                         if RenderStepped then
@@ -8970,9 +8909,9 @@ Size = (not MobileDetection.IsTouchDevice and UDim2New(0, 659, 0, 511)) or
                     AutoButtonColor = false,
                     BackgroundTransparency = 1,
                     ZIndex = 2,
-                    Size = UDim2New(1, 0, 0, 25),
+                    Size = UDim2New(1, 0, 0, IsMobile and 40 or 25),
                     BorderSizePixel = 0,
-                    TextSize = 14,
+                    TextSize = IsMobile and 18 or 14,
                     BackgroundColor3 = FromRGB(22, 25, 24)
                 })  PlayerItems["NewPlayer"]:AddToTheme({BackgroundColor3 = "Inline"})
 
@@ -8990,7 +8929,7 @@ Size = (not MobileDetection.IsTouchDevice and UDim2New(0, 659, 0, 511)) or
                     TextTransparency = 0.4000000059604645,
                                         ZIndex = 2,
                     Text = Player.Name,
-                    Size = UDim2New(0.3499999940395355, 0, 0, 15),
+                    Size = UDim2New(0.3499999940395355, 0, 0, IsMobile and 20 or 15),
                     Position = UDim2New(0, 10, 0.5, 0),
                     AnchorPoint = Vector2New(0, 0.5),
                     BorderSizePixel = 0,
@@ -8998,7 +8937,7 @@ Size = (not MobileDetection.IsTouchDevice and UDim2New(0, 659, 0, 511)) or
                     TextXAlignment = Enum.TextXAlignment.Left,
                     BorderColor3 = FromRGB(0, 0, 0),
                     AutomaticSize = Enum.AutomaticSize.X,
-                    TextSize = 14,
+                    TextSize = IsMobile and 16 or 14,
                     BackgroundColor3 = FromRGB(255, 255, 255)
                 })
 
@@ -9010,7 +8949,7 @@ Size = (not MobileDetection.IsTouchDevice and UDim2New(0, 659, 0, 511)) or
                                         ZIndex = 2,
                     TextTransparency = 0.4000000059604645,
                     Text = "Neutral",
-                    Size = UDim2New(0.3499999940395355, 0, 0, 15),
+                    Size = UDim2New(0.3499999940395355, 0, 0, IsMobile and 20 or 15),
                     Position = UDim2New(0.699999988079071, 10, 0.5, 0),
                     AnchorPoint = Vector2New(0, 0.5),
                     BorderSizePixel = 0,
@@ -9018,7 +8957,7 @@ Size = (not MobileDetection.IsTouchDevice and UDim2New(0, 659, 0, 511)) or
                     TextXAlignment = Enum.TextXAlignment.Left,
                     BorderColor3 = FromRGB(0, 0, 0),
                     AutomaticSize = Enum.AutomaticSize.X,
-                    TextSize = 14,
+                    TextSize = IsMobile and 16 or 14,
                     BackgroundColor3 = FromRGB(255, 255, 255)
                 })
 
@@ -9032,7 +8971,7 @@ Size = (not MobileDetection.IsTouchDevice and UDim2New(0, 659, 0, 511)) or
                     TextColor3 = TeamColor,
                     TextTransparency = 0.4000000059604645,
                     Text = Team,
-                    Size = UDim2New(0.3499999940395355, 0, 0, 15),
+                    Size = UDim2New(0.3499999940395355, 0, 0, IsMobile and 20 or 15),
                     Position = UDim2New(0.3499999940395355, 10, 0.5, 0),
                                         ZIndex = 2,
                     AnchorPoint = Vector2New(0, 0.5),
@@ -9041,7 +8980,7 @@ Size = (not MobileDetection.IsTouchDevice and UDim2New(0, 659, 0, 511)) or
                     TextXAlignment = Enum.TextXAlignment.Left,
                     BorderColor3 = FromRGB(0, 0, 0),
                     AutomaticSize = Enum.AutomaticSize.X,
-                    TextSize = 14,
+                    TextSize = IsMobile and 16 or 14,
                     BackgroundColor3 = FromRGB(255, 255, 255)
                 })
 
@@ -9197,7 +9136,7 @@ Size = (not MobileDetection.IsTouchDevice and UDim2New(0, 659, 0, 511)) or
                     Parent = Section.Page.ColumnsData[Section.Side].Instance,
                     Name = "\0",
                     BorderSizePixel = 0,
-                    Size = UDim2New(1, 0, 0, 55),
+                    Size = UDim2New(1, 0, 0, IsMobile and 80 or 55),
                     BorderColor3 = FromRGB(0, 0, 0),
                     ZIndex = 2,
                     AutomaticSize = Enum.AutomaticSize.Y,
@@ -9213,7 +9152,7 @@ Size = (not MobileDetection.IsTouchDevice and UDim2New(0, 659, 0, 511)) or
                 Items["Topbar"] = Instances:Create("Frame", {
                     Parent = Items["Section"].Instance,
                     Name = "\0",
-                    Size = UDim2New(1, 0, 0, 35),
+                    Size = UDim2New(1, 0, 0, IsMobile and 50 or 35),
                     BorderColor3 = FromRGB(0, 0, 0),
                     ZIndex = 2,
                     BorderSizePixel = 0,
@@ -9256,12 +9195,12 @@ Size = (not MobileDetection.IsTouchDevice and UDim2New(0, 659, 0, 511)) or
                     Text = Section.Name,
                     BorderSizePixel = 0,
                     AnchorPoint = Vector2New(0, 0.5),
-                    Size = UDim2New(1, -125, 0, 15),
+                    Size = UDim2New(1, -125, 0, IsMobile and 25 or 15),
                     BackgroundTransparency = 1,
                     TextXAlignment = Enum.TextXAlignment.Left,
                     Position = UDim2New(0, 8, 0.5, 0),
                     ZIndex = 2,
-                    TextSize = 14,
+                    TextSize = IsMobile and 18 or 14,
                     BackgroundColor3 = FromRGB(255, 255, 255)
                 })  Items["Title"]:AddToTheme({TextColor3 = "Text"})
 
@@ -9271,7 +9210,7 @@ Size = (not MobileDetection.IsTouchDevice and UDim2New(0, 659, 0, 511)) or
                     ImageColor3 = FromRGB(196, 231, 255),
                     ScaleType = Enum.ScaleType.Fit,
                     BorderColor3 = FromRGB(0, 0, 0),
-                    Size = UDim2New(0, 18, 0, 18),
+                    Size = UDim2New(0, IsMobile and 28 or 18, 0, IsMobile and 28 or 18),
                     AnchorPoint = Vector2New(1, 0.5),
                     Image = "rbxassetid://"..Section.Icon,
                     BackgroundTransparency = 1,
@@ -9306,7 +9245,7 @@ Size = (not MobileDetection.IsTouchDevice and UDim2New(0, 659, 0, 511)) or
                     BorderColor3 = FromRGB(0, 0, 0),
                     BorderSizePixel = 0,
                     BackgroundTransparency = 1,
-                    Position = UDim2New(0, 8, 0, 45),
+                    Position = UDim2New(0, 8, 0, IsMobile and 55 or 45),
                     Size = UDim2New(1, -16, 0, 0),
                     ZIndex = 2,
                     AutomaticSize = Enum.AutomaticSize.Y,
@@ -9454,9 +9393,9 @@ Size = (not MobileDetection.IsTouchDevice and UDim2New(0, 659, 0, 511)) or
                     Text = "",
                     AutoButtonColor = false,
                     BorderSizePixel = 0,
-                    Size = UDim2New(1, 0, 0, 30),
+                    Size = UDim2New(1, 0, 0, IsMobile and 45 or 30),
                     ZIndex = 2,
-                    TextSize = 14,
+                    TextSize = IsMobile and 18 or 14,
                     BackgroundColor3 = FromRGB(34, 39, 45)
                 })  Items["Button"]:AddToTheme({BackgroundColor3 = "Element"})
 
@@ -9496,7 +9435,7 @@ Size = (not MobileDetection.IsTouchDevice and UDim2New(0, 659, 0, 511)) or
                     BorderSizePixel = 0,
                     Size = UDim2New(1, 0, 1, 0),
                     ZIndex = 2,
-                    TextSize = 14,
+                    TextSize = IsMobile and 18 or 14,
                     BackgroundColor3 = FromRGB(255, 255, 255)
                 })  Items["Text"]:AddToTheme({TextColor3 = "Text"})
             end
@@ -9561,7 +9500,7 @@ Size = (not MobileDetection.IsTouchDevice and UDim2New(0, 659, 0, 511)) or
                     Parent = Slider.Section.Items["Content"].Instance,
                     Name = "\0",
                     BackgroundTransparency = 1,
-                    Size = UDim2New(1, 0, 0, 38),
+                    Size = UDim2New(1, 0, 0, IsMobile and 55 or 38),
                     BorderColor3 = FromRGB(0, 0, 0),
                     ZIndex = 2,
                     BorderSizePixel = 0,
@@ -9579,10 +9518,10 @@ Size = (not MobileDetection.IsTouchDevice and UDim2New(0, 659, 0, 511)) or
                     Text = Slider.Name,
                     AutomaticSize = Enum.AutomaticSize.X,
                     BackgroundTransparency = 1,
-                    Size = UDim2New(0, 0, 0, 15),
+                    Size = UDim2New(0, 0, 0, IsMobile and 20 or 15),
                     BorderSizePixel = 0,
                     ZIndex = 2,
-                    TextSize = 14,
+                    TextSize = IsMobile and 18 or 14,
                     BackgroundColor3 = FromRGB(255, 255, 255)
                 })  Items["Text"]:AddToTheme({TextColor3 = "Text"})
 
@@ -9594,7 +9533,7 @@ Size = (not MobileDetection.IsTouchDevice and UDim2New(0, 659, 0, 511)) or
                     BorderColor3 = FromRGB(0, 0, 0),
                     AnchorPoint = Vector2New(0, 1),
                     Position = UDim2New(0, 0, 1, 0),
-                    Size = UDim2New(1, 0, 0, 15),
+                    Size = UDim2New(1, 0, 0, IsMobile and 25 or 15),
                     ZIndex = 2,
                     BorderSizePixel = 0,
                     BackgroundColor3 = FromRGB(34, 39, 45)
@@ -9657,12 +9596,12 @@ Size = (not MobileDetection.IsTouchDevice and UDim2New(0, 659, 0, 511)) or
                     Text = "",
                     AutomaticSize = Enum.AutomaticSize.X,
                     AnchorPoint = Vector2New(1, 0),
-                    Size = UDim2New(0, 0, 0, 15),
+                    Size = UDim2New(0, 0, 0, IsMobile and 20 or 15),
                     BackgroundTransparency = 1,
                     Position = UDim2New(1, 0, 0, 0),
                     BorderSizePixel = 0,
                     ZIndex = 2,
-                    TextSize = 14,
+                    TextSize = IsMobile and 18 or 14,
                     BackgroundColor3 = FromRGB(255, 255, 255)
                 })  Items["Value"]:AddToTheme({TextColor3 = "Text"})
             end
@@ -9765,7 +9704,7 @@ Size = (not MobileDetection.IsTouchDevice and UDim2New(0, 659, 0, 511)) or
                 Items = Data.Items or Data.items or { "One", "Two", "Three" },
                 Callback = Data.Callback or Data.callback or function() end,
                 Multi = Data.Multi or Data.multi or false,
-                MaxSize = Data.MaxSize or Data.maxsize or 85,
+                MaxSize = Data.MaxSize or Data.maxsize or (IsMobile and 125 or 85),
                 Tooltip = Data.Tooltip or Data.tooltip or nil
             }
 
@@ -9779,7 +9718,7 @@ Size = (not MobileDetection.IsTouchDevice and UDim2New(0, 659, 0, 511)) or
                 Items = Dropdown.Items,
                 Default = Dropdown.Default,
                 Multi = Dropdown.Multi,
-                MaxSize = Dropdown.MaxSize or 65
+                MaxSize = Dropdown.MaxSize or (IsMobile and 125 or 65)
             })  
 
             DropdownItems["Dropdown"]:Tooltip(Dropdown.Tooltip)
@@ -9830,7 +9769,7 @@ Size = (not MobileDetection.IsTouchDevice and UDim2New(0, 659, 0, 511)) or
                     ZIndex = 2,
                     Name = "\0",
                     BorderColor3 = FromRGB(0, 0, 0),
-                    Size = UDim2New(1, 0, 0, 20),
+                    Size = UDim2New(1, 0, 0, IsMobile and 30 or 20),
                     AutomaticSize = Enum.AutomaticSize.Y,
                     BorderSizePixel = 0,
                     BackgroundColor3 = FromRGB(255, 255, 255)
@@ -9847,14 +9786,14 @@ Size = (not MobileDetection.IsTouchDevice and UDim2New(0, 659, 0, 511)) or
                     Text = Label.Name,
                     Name = "\0",
                     AnchorPoint = Vector2New(0, 0.5),
-                    Size = UDim2New(1, -16, 0, 15),
+                    Size = UDim2New(1, -16, 0, IsMobile and 25 or 15),
                     TextWrapped = true,
                     AutomaticSize = Enum.AutomaticSize.Y,
                     BackgroundTransparency = 1,
                     TextXAlignment = Enum.TextXAlignment[Label.Alignment],
                     Position = UDim2New(0, 0, 0.5, 0),
                     BorderSizePixel = 0,
-                    TextSize = 14,
+                    TextSize = IsMobile and 18 or 14,
                     BackgroundColor3 = FromRGB(255, 255, 255)
                 })  Items["Text"]:AddToTheme({TextColor3 = "Text"})
 
@@ -9884,7 +9823,7 @@ Size = (not MobileDetection.IsTouchDevice and UDim2New(0, 659, 0, 511)) or
                     VerticalAlignment = Enum.VerticalAlignment.Center,
                     FillDirection = Enum.FillDirection.Horizontal,
                     HorizontalAlignment = Enum.HorizontalAlignment.Right,
-                    Padding = UDimNew(0, 6),
+                    Padding = UDimNew(0, IsMobile and 12 or 6),
                     SortOrder = Enum.SortOrder.LayoutOrder
                 })
             end
@@ -9993,7 +9932,7 @@ Size = (not MobileDetection.IsTouchDevice and UDim2New(0, 659, 0, 511)) or
                     Parent = Textbox.Section.Items["Content"].Instance,
                     Name = "\0",
                     BackgroundTransparency = 1,
-                    Size = UDim2New(1, 0, 0, 47),
+                    Size = UDim2New(1, 0, 0, IsMobile and 70 or 47),
                     BorderColor3 = FromRGB(0, 0, 0),
                     ZIndex = 2,
                     BorderSizePixel = 0,
@@ -10011,10 +9950,10 @@ Size = (not MobileDetection.IsTouchDevice and UDim2New(0, 659, 0, 511)) or
                     Text = Textbox.Name,
                     AutomaticSize = Enum.AutomaticSize.X,
                     BackgroundTransparency = 1,
-                    Size = UDim2New(0, 0, 0, 15),
+                    Size = UDim2New(0, 0, 0, IsMobile and 20 or 15),
                     BorderSizePixel = 0,
                     ZIndex = 2,
-                    TextSize = 14,
+                    TextSize = IsMobile and 18 or 14,
                     BackgroundColor3 = FromRGB(255, 255, 255)
                 })  Items["Text"]:AddToTheme({TextColor3 = "Text"})
 
@@ -10024,7 +9963,7 @@ Size = (not MobileDetection.IsTouchDevice and UDim2New(0, 659, 0, 511)) or
                     BorderColor3 = FromRGB(0, 0, 0),
                     AnchorPoint = Vector2New(0, 1),
                     Position = UDim2New(0, 0, 1, 0),
-                    Size = UDim2New(1, 0, 0, 25),
+                    Size = UDim2New(1, 0, 0, IsMobile and 35 or 25),
                     ZIndex = 2,
                     BorderSizePixel = 0,
                     BackgroundColor3 = FromRGB(34, 39, 45)
@@ -10068,7 +10007,7 @@ Size = (not MobileDetection.IsTouchDevice and UDim2New(0, 659, 0, 511)) or
                     ClearTextOnFocus = false,
                     TextXAlignment = Enum.TextXAlignment.Left,
                     PlaceholderText = Textbox.Placeholder,
-                    TextSize = 14,
+                    TextSize = IsMobile and 18 or 14,
                     BackgroundColor3 = FromRGB(255, 255, 255)
                 })  Items["Input"]:AddToTheme({TextColor3 = "Text", PlaceholderColor3 = "Inactive Text"})
 
