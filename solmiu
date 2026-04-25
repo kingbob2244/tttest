@@ -89,7 +89,7 @@ local Library = {
     MainColor = Color3.fromRGB(28, 28, 28);
     BackgroundColor = Color3.fromRGB(20, 20, 20);
 
-    AccentColor = Color3.fromRGB(0, 85, 255);
+    AccentColor = Color3.fromRGB(0, 150, 255);
     DisabledAccentColor = Color3.fromRGB(142, 142, 142);
 
     OutlineColor = Color3.fromRGB(50, 50, 50);
@@ -134,6 +134,7 @@ local Library = {
     -- Privacy Mode Settings
     PrivacyMode = false;
     CustomName = "";
+    HideAvatar = false;
 };
 
 pcall(function() Library.DevicePlatform = InputService:GetPlatform(); end);
@@ -143,6 +144,8 @@ Library.MinSize = if Library.IsMobile then Vector2.new(550, 200) else Vector2.ne
 local RainbowStep = 0
 local Hue = 0
 local DPIScale = 1
+local GlowPulse = 0
+local GlowDirection = 1
 
 table.insert(Library.Signals, RenderStepped:Connect(function(Delta)
     RainbowStep = RainbowStep + Delta
@@ -158,6 +161,16 @@ table.insert(Library.Signals, RenderStepped:Connect(function(Delta)
 
         Library.CurrentRainbowHue = Hue;
         Library.CurrentRainbowColor = Color3.fromHSV(Hue, 0.8, 1);
+        
+        -- Pulsing glow effect
+        GlowPulse = GlowPulse + (Delta * 3 * GlowDirection)
+        if GlowPulse >= 0.6 then
+            GlowPulse = 0.6
+            GlowDirection = -1
+        elseif GlowPulse <= 0.2 then
+            GlowPulse = 0.2
+            GlowDirection = 1
+        end
     end;
 end));
 
@@ -5078,18 +5091,19 @@ function Library:CreateWindow(...)
         Parent = Outer;
     });
 
+    -- Enhanced glowing outline effect with pulsing
     local GlowOutline = Library:Create('Frame', {
         BackgroundColor3 = Library.AccentColor;
-        BackgroundTransparency = 0.7;
+        BackgroundTransparency = 0.5;
         BorderSizePixel = 0;
-        Position = UDim2.new(-0.005, 0, -0.005, 0);
-        Size = UDim2.new(1.01, 0, 1.01, 0);
+        Position = UDim2.new(-0.008, 0, -0.008, 0);
+        Size = UDim2.new(1.016, 0, 1.016, 0);
         ZIndex = 0;
         Parent = Outer;
     });
 
     Library:Create('UICorner', {
-        CornerRadius = UDim.new(0, 14);
+        CornerRadius = UDim.new(0, 16);
         Parent = GlowOutline;
     });
 
@@ -5099,22 +5113,32 @@ function Library:CreateWindow(...)
 
     local OuterGlow = Library:Create('Frame', {
         BackgroundColor3 = Library.AccentColor;
-        BackgroundTransparency = 0.9;
+        BackgroundTransparency = 0.85;
         BorderSizePixel = 0;
-        Position = UDim2.new(-0.008, 0, -0.008, 0);
-        Size = UDim2.new(1.016, 0, 1.016, 0);
+        Position = UDim2.new(-0.012, 0, -0.012, 0);
+        Size = UDim2.new(1.024, 0, 1.024, 0);
         ZIndex = -1;
         Parent = Outer;
     });
 
     Library:Create('UICorner', {
-        CornerRadius = UDim.new(0, 16);
+        CornerRadius = UDim.new(0, 20);
         Parent = OuterGlow;
     });
 
     Library:AddToRegistry(OuterGlow, {
         BackgroundColor3 = 'AccentColor';
     });
+
+    -- Pulsing glow effect
+    task.spawn(function()
+        while Outer and Outer.Parent do
+            local pulseAlpha = 0.4 + (GlowPulse * 0.3)
+            GlowOutline.BackgroundTransparency = pulseAlpha
+            OuterGlow.BackgroundTransparency = 0.75 + (GlowPulse * 0.15)
+            task.wait()
+        end
+    end)
 
     LibraryMainOuterFrame = Outer;
     Library:MakeDraggable(Outer, 25, true);
@@ -5153,7 +5177,7 @@ function Library:CreateWindow(...)
         Parent = Inner;
     });
 
-    -- NEW LAYOUT: Sidebar on the left for tabs
+    -- Sidebar on the left for tabs
     local Sidebar = Library:Create('Frame', {
         BackgroundColor3 = Library.BackgroundColor;
         BorderColor3 = Library.OutlineColor;
@@ -5260,20 +5284,29 @@ function Library:CreateWindow(...)
 
     -- Update avatar
     local function UpdateAvatar()
+        if Library.HideAvatar then
+            UserAvatarImage.Image = "rbxassetid://0"
+            UserAvatarImage.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+            return
+        end
         local userId = LocalPlayer.UserId
         local avatarUrl = string.format("https://www.roblox.com/headshot-thumbnail/image?userId=%d&width=150&height=150&format=png", userId)
         UserAvatarImage.Image = avatarUrl
+        UserAvatarImage.BackgroundColor3 = Library.BackgroundColor
     end
     UpdateAvatar()
     LocalPlayer:GetPropertyChangedSignal("UserId"):Connect(UpdateAvatar)
 
-    -- Settings popup (Privacy Mode)
+    -- Privacy Mode Toggle
+    local PrivacyToggleOuter, PrivacyToggleInner, PrivacyToggleLabel
+    
+    -- Settings popup (Privacy Mode) - Enhanced with UI-matching toggle
     local SettingsPopup = Library:Create('Frame', {
         BackgroundColor3 = Library.BackgroundColor;
         BorderColor3 = Library.OutlineColor;
         BorderMode = Enum.BorderMode.Inset;
         Position = UDim2.new(1, -10, 0, 30);
-        Size = UDim2.new(0, 180, 0, 100);
+        Size = UDim2.new(0, 190, 0, 140);
         Visible = false;
         ZIndex = 100;
         Parent = Sidebar;
@@ -5290,7 +5323,7 @@ function Library:CreateWindow(...)
     });
 
     local SettingsTitle = Library:CreateLabel({
-        Size = UDim2.new(1, 0, 0, 20);
+        Size = UDim2.new(1, 0, 0, 22);
         Text = "Privacy Settings";
         TextSize = 12;
         TextXAlignment = Enum.TextXAlignment.Center;
@@ -5299,13 +5332,31 @@ function Library:CreateWindow(...)
         Parent = SettingsPopup;
     });
 
-    local PrivacyToggleOuter = Library:Create('Frame', {
-        BackgroundColor3 = Color3.new(0, 0, 0);
-        BorderColor3 = Color3.new(0, 0, 0);
-        Size = UDim2.new(0, 40, 0, 13);
-        Position = UDim2.new(0, 5, 0, 25);
+    -- Divider
+    local DividerLine = Library:Create('Frame', {
+        BackgroundColor3 = Library.OutlineColor;
+        Size = UDim2.new(1, -10, 0, 1);
+        Position = UDim2.new(0, 5, 0, 24);
         ZIndex = 101;
         Parent = SettingsPopup;
+    });
+
+    -- Privacy Mode Toggle (UI matching toggle)
+    local PrivacyToggleContainer = Library:Create('Frame', {
+        BackgroundTransparency = 1;
+        Position = UDim2.new(0, 5, 0, 32);
+        Size = UDim2.new(1, -10, 0, 22);
+        ZIndex = 101;
+        Parent = SettingsPopup;
+    });
+
+    PrivacyToggleOuter = Library:Create('Frame', {
+        BackgroundColor3 = Color3.new(0, 0, 0);
+        BorderColor3 = Color3.new(0, 0, 0);
+        Size = UDim2.new(0, 30, 0, 16);
+        Position = UDim2.new(0, 0, 0.5, -8);
+        ZIndex = 102;
+        Parent = PrivacyToggleContainer;
     });
 
     Library:Create('UICorner', {
@@ -5313,12 +5364,16 @@ function Library:CreateWindow(...)
         Parent = PrivacyToggleOuter;
     });
 
-    local PrivacyToggleInner = Library:Create('Frame', {
+    Library:AddToRegistry(PrivacyToggleOuter, {
+        BorderColor3 = 'Black';
+    });
+
+    PrivacyToggleInner = Library:Create('Frame', {
         BackgroundColor3 = Library.MainColor;
         BorderColor3 = Library.OutlineColor;
         BorderMode = Enum.BorderMode.Inset;
-        Size = UDim2.new(0, 16, 1, 0);
-        ZIndex = 102;
+        Size = UDim2.new(0, 13, 1, 0);
+        ZIndex = 103;
         Parent = PrivacyToggleOuter;
     });
 
@@ -5327,11 +5382,86 @@ function Library:CreateWindow(...)
         Parent = PrivacyToggleInner;
     });
 
-    local PrivacyToggleLabel = Library:CreateLabel({
-        Position = UDim2.new(0, 48, 0, 24);
-        Size = UDim2.new(0, 80, 0, 16);
+    Library:AddToRegistry(PrivacyToggleInner, {
+        BackgroundColor3 = 'MainColor';
+        BorderColor3 = 'OutlineColor';
+    });
+
+    PrivacyToggleLabel = Library:CreateLabel({
+        Position = UDim2.new(0, 36, 0, 3);
+        Size = UDim2.new(1, -36, 0, 16);
         Text = "Privacy Mode";
         TextSize = 11;
+        TextXAlignment = Enum.TextXAlignment.Left;
+        RichText = true;
+        ZIndex = 102;
+        Parent = PrivacyToggleContainer;
+    });
+
+    -- Hide Avatar Toggle
+    local HideAvatarToggleOuter, HideAvatarToggleInner
+    local HideAvatarContainer = Library:Create('Frame', {
+        BackgroundTransparency = 1;
+        Position = UDim2.new(0, 5, 0, 58);
+        Size = UDim2.new(1, -10, 0, 22);
+        ZIndex = 101;
+        Parent = SettingsPopup;
+    });
+
+    HideAvatarToggleOuter = Library:Create('Frame', {
+        BackgroundColor3 = Color3.new(0, 0, 0);
+        BorderColor3 = Color3.new(0, 0, 0);
+        Size = UDim2.new(0, 30, 0, 16);
+        Position = UDim2.new(0, 0, 0.5, -8);
+        ZIndex = 102;
+        Parent = HideAvatarContainer;
+    });
+
+    Library:Create('UICorner', {
+        CornerRadius = UDim.new(0, 4);
+        Parent = HideAvatarToggleOuter;
+    });
+
+    Library:AddToRegistry(HideAvatarToggleOuter, {
+        BorderColor3 = 'Black';
+    });
+
+    HideAvatarToggleInner = Library:Create('Frame', {
+        BackgroundColor3 = Library.MainColor;
+        BorderColor3 = Library.OutlineColor;
+        BorderMode = Enum.BorderMode.Inset;
+        Size = UDim2.new(0, 13, 1, 0);
+        ZIndex = 103;
+        Parent = HideAvatarToggleOuter;
+    });
+
+    Library:Create('UICorner', {
+        CornerRadius = UDim.new(0, 4);
+        Parent = HideAvatarToggleInner;
+    });
+
+    Library:AddToRegistry(HideAvatarToggleInner, {
+        BackgroundColor3 = 'MainColor';
+        BorderColor3 = 'OutlineColor';
+    });
+
+    local HideAvatarLabel = Library:CreateLabel({
+        Position = UDim2.new(0, 36, 0, 3);
+        Size = UDim2.new(1, -36, 0, 16);
+        Text = "Hide Avatar";
+        TextSize = 11;
+        TextXAlignment = Enum.TextXAlignment.Left;
+        RichText = true;
+        ZIndex = 102;
+        Parent = HideAvatarContainer;
+    });
+
+    -- Custom Name Input
+    local CustomNameLabel = Library:CreateLabel({
+        Position = UDim2.new(0, 5, 0, 84);
+        Size = UDim2.new(1, -10, 0, 14);
+        Text = "Custom Name:";
+        TextSize = 10;
         TextXAlignment = Enum.TextXAlignment.Left;
         RichText = true;
         ZIndex = 101;
@@ -5342,10 +5472,10 @@ function Library:CreateWindow(...)
         BackgroundColor3 = Library.MainColor;
         BorderColor3 = Library.OutlineColor;
         BorderMode = Enum.BorderMode.Inset;
-        Position = UDim2.new(0, 5, 0, 48);
+        Position = UDim2.new(0, 5, 0, 100);
         Size = UDim2.new(1, -10, 0, 22);
         Font = Library.Font;
-        PlaceholderText = "Custom Name";
+        PlaceholderText = "Enter custom name...";
         Text = "";
         TextColor3 = Library.FontColor;
         TextSize = 11;
@@ -5374,13 +5504,16 @@ function Library:CreateWindow(...)
                 UserNameLabel.Text = "Hidden User"
             end
             DisplayNameLabel.Text = ""
-            UserAvatarImage.Image = "rbxassetid://0"
-            UserAvatarImage.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+            if not Library.HideAvatar then
+                UserAvatarImage.Image = "rbxassetid://0"
+                UserAvatarImage.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+            end
         else
             UserNameLabel.Text = LocalPlayer.Name
             DisplayNameLabel.Text = LocalPlayer.DisplayName or ""
-            UpdateAvatar()
-            UserAvatarImage.BackgroundColor3 = Library.BackgroundColor
+            if not Library.HideAvatar then
+                UpdateAvatar()
+            end
         end
     end
 
@@ -5389,18 +5522,53 @@ function Library:CreateWindow(...)
             PrivacyToggleInner.Position = UDim2.new(0.5, 2, 0, 0)
             PrivacyToggleInner.Size = UDim2.new(0.5, -4, 1, 0)
             PrivacyToggleInner.BackgroundColor3 = Library.AccentColor
+            PrivacyToggleLabel.TextColor3 = Library.AccentColor
         else
             PrivacyToggleInner.Position = UDim2.new(0, 2, 0, 0)
             PrivacyToggleInner.Size = UDim2.new(0.5, -4, 1, 0)
             PrivacyToggleInner.BackgroundColor3 = Library.MainColor
+            PrivacyToggleLabel.TextColor3 = Library.FontColor
         end
         UpdatePrivacyMode()
+    end
+
+    local function UpdateHideAvatarToggle()
+        if Library.HideAvatar then
+            HideAvatarToggleInner.Position = UDim2.new(0.5, 2, 0, 0)
+            HideAvatarToggleInner.Size = UDim2.new(0.5, -4, 1, 0)
+            HideAvatarToggleInner.BackgroundColor3 = Library.AccentColor
+            HideAvatarLabel.TextColor3 = Library.AccentColor
+        else
+            HideAvatarToggleInner.Position = UDim2.new(0, 2, 0, 0)
+            HideAvatarToggleInner.Size = UDim2.new(0.5, -4, 1, 0)
+            HideAvatarToggleInner.BackgroundColor3 = Library.MainColor
+            HideAvatarLabel.TextColor3 = Library.FontColor
+        end
+        if Library.HideAvatar then
+            UserAvatarImage.Image = "rbxassetid://0"
+            UserAvatarImage.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+        else
+            if Library.PrivacyMode then
+                UserAvatarImage.Image = "rbxassetid://0"
+                UserAvatarImage.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+            else
+                UpdateAvatar()
+            end
+        end
     end
 
     PrivacyToggleOuter.InputBegan:Connect(function(Input)
         if Input.UserInputType == Enum.UserInputType.MouseButton1 then
             Library.PrivacyMode = not Library.PrivacyMode
             UpdatePrivacyToggle()
+            Library:AttemptSave()
+        end
+    end)
+
+    HideAvatarToggleOuter.InputBegan:Connect(function(Input)
+        if Input.UserInputType == Enum.UserInputType.MouseButton1 then
+            Library.HideAvatar = not Library.HideAvatar
+            UpdateHideAvatarToggle()
             Library:AttemptSave()
         end
     end)
@@ -5455,6 +5623,8 @@ function Library:CreateWindow(...)
     end)
 
     UpdatePrivacyToggle()
+    UpdateHideAvatarToggle()
+    UpdatePrivacyMode()
 
     -- Main content area (to the right of sidebar)
     local MainContent = Library:Create('Frame', {
@@ -5529,8 +5699,6 @@ function Library:CreateWindow(...)
         };
 
         -- Create tab button in sidebar
-        local TabButtonWidth = Library:GetTextBounds(Tab.Name, Library.Font, 14) + 20;
-        
         local TabButton = Library:Create('Frame', {
             BackgroundColor3 = Library.BackgroundColor;
             BorderColor3 = Library.OutlineColor;
