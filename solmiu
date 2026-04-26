@@ -1,1 +1,1771 @@
 
+	Library.Page = function(self, Properties)
+		Properties = Properties or { }
+
+		local Page = {
+			Window = self,
+
+			Name = Properties.Name or Properties.name or "Page",
+			Columns = Properties.Columns or Properties.columns or 2,
+
+			Active = false,
+			IsKeyPage = Properties.IsKeyPage or Properties.iskeypage or false,
+
+			Items = { },
+			ColumnsData = { }
+		}
+
+		local Items = { } do
+			Items["Inactive"] = Instances:Create("TextButton", {
+				Parent = Page.Window.Items["Pages"].Instance,
+				Name = "\0",
+				FontFace = Library.Font,
+				TextColor3 = FromRGB(0, 0, 0),
+				BorderColor3 = FromRGB(0, 0, 0),
+				Text = "",
+				AutoButtonColor = false,
+				BorderSizePixel = 0,
+				BackgroundTransparency = 1,
+				Size = UDim2New(1, 0, 0, 35 * MobileScale),
+				ClipsDescendants = true,
+				ZIndex = 2,
+				TextSize = 14 * MobileScale,
+				BackgroundColor3 = FromRGB(22, 20, 24)
+			})  Items["Inactive"]:AddToTheme({BackgroundColor3 = "Inline"})
+
+			Instances:Create("UICorner", {
+				Parent = Items["Inactive"].Instance,
+				Name = "\0",
+				CornerRadius = UDimNew(0, 5 * MobileScale)
+			})
+
+			Items["Liner"] = Instances:Create("Frame", {
+				Parent = Items["Inactive"].Instance,
+				Name = "\0",
+				BorderColor3 = FromRGB(0, 0, 0),
+				AnchorPoint = Vector2New(0, 0.5),
+				BackgroundTransparency = 1,
+				Position = UDim2New(0, -3 * MobileScale, 0.5, 0),
+				Size = UDim2New(0, 3 * MobileScale, 1, -20 * MobileScale),
+				ZIndex = 2,
+				BorderSizePixel = 0,
+				BackgroundColor3 = FromRGB(255, 174, 254)
+			})  Items["Liner"]:AddToTheme({BackgroundColor3 = "Accent"})
+
+			Instances:Create("UICorner", {
+				Parent = Items["Liner"].Instance,
+				Name = "\0",
+				CornerRadius = UDimNew(1, 0)
+			})
+
+			Items["Text"] = Instances:Create("TextLabel", {
+				Parent = Items["Inactive"].Instance,
+				Name = "\0",
+				FontFace = Library.Font,
+				TextColor3 = FromRGB(255, 255, 255),
+				TextTransparency = 0.4,
+				Text = Page.Name,
+				AutomaticSize = Enum.AutomaticSize.X,
+				Size = UDim2New(0, 0, 0, 15 * MobileScale),
+				AnchorPoint = Vector2New(0, 0.5),
+				BorderSizePixel = 0,
+				BackgroundTransparency = 1,
+				Position = UDim2New(0, 4 * MobileScale, 0.5, 0),
+				BorderColor3 = FromRGB(0, 0, 0),
+				ZIndex = 2,
+				TextSize = 14 * MobileScale,
+				BackgroundColor3 = FromRGB(255, 255, 255)
+			})  Items["Text"]:AddToTheme({TextColor3 = "Text"})
+
+			Items["Page"] = Instances:Create("Frame", {
+				Parent = Page.Window.Items["Content"].Instance,
+				Name = "\0",
+				Visible = false,
+				BackgroundTransparency = 1,
+				Size = UDim2New(1, 0, 1, 0),
+				BorderColor3 = FromRGB(0, 0, 0),
+				ZIndex = 2,
+				BorderSizePixel = 0,
+				BackgroundColor3 = FromRGB(255, 255, 255)
+			})
+
+			if not Page.IsKeyPage then
+				Items["Columns"] = Instances:Create("Frame", {
+					Parent = Items["Page"].Instance,
+					Name = "\0",
+					BorderColor3 = FromRGB(0, 0, 0),
+					BackgroundTransparency = 1,
+					Position = UDim2New(0, 0, 0, 43 * MobileScale),
+					Size = UDim2New(1, 0, 1, -43 * MobileScale),
+					ZIndex = 2,
+					BorderSizePixel = 0,
+					BackgroundColor3 = FromRGB(255, 255, 255)
+				})
+
+				Instances:Create("UIListLayout", {
+					Parent = Items["Columns"].Instance,
+					Name = "\0",
+					FillDirection = Enum.FillDirection.Horizontal,
+					HorizontalFlex = Enum.UIFlexAlignment.Fill,
+					Padding = UDimNew(0, 8 * MobileScale),
+					SortOrder = Enum.SortOrder.LayoutOrder,
+					VerticalFlex = Enum.UIFlexAlignment.Fill
+				})
+
+				for Index = 1, Page.Columns do 
+					local NewColumn = Instances:Create("ScrollingFrame", {
+						Parent = Items["Columns"].Instance,
+						Name = "\0",
+						ScrollBarImageColor3 = FromRGB(0, 0, 0),
+						Active = true,
+						AutomaticCanvasSize = Enum.AutomaticSize.Y,
+						ScrollBarThickness = 0,
+						BorderColor3 = FromRGB(0, 0, 0),
+						BackgroundTransparency = 1,
+						Size = UDim2New(0, 100, 0, 100),
+						BackgroundColor3 = FromRGB(255, 255, 255),
+						ZIndex = 2,
+						BorderSizePixel = 0,
+						CanvasSize = UDim2New(0, 0, 0, 0)
+					})
+
+					Instances:Create("UIPadding", {
+						Parent = NewColumn.Instance,
+						Name = "\0",
+						PaddingBottom = UDimNew(0, 8 * MobileScale)
+					})
+
+					Instances:Create("UIListLayout", {
+						Parent = NewColumn.Instance,
+						Name = "\0",
+						Padding = UDimNew(0, 8 * MobileScale),
+						SortOrder = Enum.SortOrder.LayoutOrder
+					})
+
+					Page.ColumnsData[Index] = NewColumn
+				end
+			else
+				Items["Page"].Instance.Size = UDim2New(1, 0, 1, -43 * MobileScale)
+				Items["Page"].Instance.Position = UDim2New(0, 0, 0, 43 * MobileScale)
+
+				Instances:Create("UIListLayout", {
+					Parent = Items["Page"].Instance,
+					Name = "\0",
+					VerticalAlignment = Enum.VerticalAlignment.Center,
+					SortOrder = Enum.SortOrder.LayoutOrder,
+					HorizontalAlignment = Enum.HorizontalAlignment.Center,
+					Padding = UDimNew(0, 15 * MobileScale)
+				})
+			end
+
+			Page.Items = Items
+		end
+
+		if not Page.IsKeyPage then 
+			Library.SearchItems[Page] = { }
+		end
+
+		local Debounce = false 
+
+		function Page:Turn(Bool)
+			self.Active = Bool
+			Items["Page"].Instance.Parent = self.Active and Page.Window.Items["Content"].Instance or Library.UnusedHolder.Instance
+
+			if self.Active then
+				Items["Page"].Instance.Visible = true
+
+				Items["Liner"]:Tween(nil, {BackgroundTransparency = 0, Size = UDim2New(0, 6 * MobileScale, 1, -20 * MobileScale)})
+				Items["Inactive"]:Tween(nil, {BackgroundTransparency = 0})
+				Items["Text"]:Tween(nil, {TextTransparency = 0, Position = UDim2New(0, 12 * MobileScale, 0.5, 0)})
+
+				Library.CurrentPage = Page
+			else
+				Items["Liner"]:Tween(nil, {BackgroundTransparency = 1, Size = UDim2New(0, 3 * MobileScale, 1, -20 * MobileScale)})
+				Items["Inactive"]:Tween(nil, {BackgroundTransparency = 1})
+				Items["Text"]:Tween(nil, {TextTransparency = 0.4, Position = UDim2New(0, 4 * MobileScale, 0.5, 0)})
+				Items["Page"].Instance.Visible = false
+			end
+		end
+
+		function Page:AddKey(Text, Key, GetKeyLink, Callback)
+			if not self.IsKeyPage then
+				return 
+			end
+
+			local NewKey = {
+				Text = Text,
+				Key = Key,
+
+				Success = false,
+			}
+
+			local InputTextbox, InputTextboxItems
+			local Button, CheckKeyButton, GetKeyButton, ButtonItems
+
+			local SubItems = { } do
+				SubItems["NewKey"] = Instances:Create("Frame", {
+					Parent = Items["Page"].Instance,
+					Name = "\0",
+					BackgroundTransparency = 1,
+					Size = UDim2New(1, -125 * MobileScale, 0, 80 * MobileScale),
+					BorderColor3 = FromRGB(0, 0, 0),
+					ZIndex = 2,
+					BorderSizePixel = 0,
+					BackgroundColor3 = FromRGB(255, 255, 255)
+				})
+
+				InputTextbox, InputTextboxItems = Components.Textbox({
+					Name = "Enter key here..",
+					Flag = Library:NextFlag(),
+					Parent = SubItems["NewKey"],
+					Page = self,
+					Placeholder = "..",
+					Disabled = false
+				})
+
+				Button, ButtonItems = Components.Button({
+					Parent = SubItems["NewKey"],
+					Page = self,
+				})
+
+				ButtonItems["Button"].Instance.AnchorPoint = Vector2New(0, 1)
+				ButtonItems["Button"].Instance.Position = UDim2New(0, 0, 1, 0)
+
+				CheckKeyButton = Button:Add("Check key", function()
+					NewKey:Check()
+				end, false)
+
+				GetKeyButton = Button:Add("Get key", function()
+					NewKey:GetKey()
+				end, false)
+			end
+
+			function NewKey:Check()
+				if InputTextboxItems["Input"].Instance.Text == NewKey.Key then
+					NewKey.Success = true
+					Callback()
+					return
+				else
+					NewKey.Success = false
+					InputTextbox:SetText("Key is false.")
+					task.wait(2)
+					InputTextbox:SetText("Enter key here..")
+				end
+			end
+
+			function NewKey:GetKey()
+				setclipboard(tostring(GetKeyLink))
+				InputTextbox:SetText("Copied link to your clipboard!")
+				task.wait(2)
+				InputTextbox:SetText("Enter key here..")
+			end
+		end
+
+		Items["Inactive"]:Connect("MouseButton1Down", function()
+			for Index, Value in Page.Window.Pages do
+				Value:Turn(Value == Page)
+			end
+		end)
+
+		if #Page.Window.Pages == 0 then 
+			Page:Turn(true)
+		end
+
+		TableInsert(Page.Window.Pages, Page)
+		return setmetatable(Page, Library.Pages)
+	end
+
+	Library.Pages.Section = function(self, Properties)
+		Properties = Properties or { }
+
+		local Section = {
+			Window = self.Window,
+			Page = self,
+
+			Name = Properties.Name or Properties.name or "Section",
+			Side = Properties.Side or Properties.side or 1,
+
+			Items = { }
+		}
+
+		local Items = { } do
+			Items["Section"] = Instances:Create("Frame", {
+				Parent = Section.Page.ColumnsData[Section.Side].Instance,
+				Name = "\0",
+				BorderSizePixel = 0,
+				Size = UDim2New(1, 0, 0, 45 * MobileScale),
+				BorderColor3 = FromRGB(0, 0, 0),
+				ZIndex = 2,
+				AutomaticSize = Enum.AutomaticSize.Y,
+				BackgroundColor3 = FromRGB(22, 20, 24)
+			})  Items["Section"]:AddToTheme({BackgroundColor3 = "Inline"})
+
+			Instances:Create("UICorner", {
+				Parent = Items["Section"].Instance,
+				Name = "\0",
+				CornerRadius = UDimNew(0, 5 * MobileScale)
+			})
+
+			Instances:Create("UIGradient", {
+				Parent = Items["Section"].Instance,
+				Name = "\0"
+			})
+
+			Instances:Create("UIPadding", {
+				Parent = Items["Section"].Instance,
+				Name = "\0",
+				PaddingBottom = UDimNew(0, 8 * MobileScale)
+			})
+
+			Items["Text"] = Instances:Create("TextLabel", {
+				Parent = Items["Section"].Instance,
+				Name = "\0",
+				FontFace = Library.Font,
+				TextColor3 = FromRGB(255, 255, 255),
+				BorderColor3 = FromRGB(0, 0, 0),
+				Text = Section.Name,
+				AutomaticSize = Enum.AutomaticSize.X,
+				Size = UDim2New(0, 0, 0, 15 * MobileScale),
+				BackgroundTransparency = 1,
+				Position = UDim2New(0, 8 * MobileScale, 0, 8 * MobileScale),
+				BorderSizePixel = 0,
+				ZIndex = 2,
+				TextSize = 14 * MobileScale,
+				BackgroundColor3 = FromRGB(255, 255, 255)
+			})  Items["Text"]:AddToTheme({TextColor3 = "Text"})
+
+			Instances:Create("Frame", {
+				Parent = Items["Section"].Instance,
+				Name = "\0",
+				Size = UDim2New(1, -16 * MobileScale, 0, 1),
+				Position = UDim2New(0, 8 * MobileScale, 0, 28 * MobileScale),
+				BorderColor3 = FromRGB(0, 0, 0),
+				ZIndex = 2,
+				BorderSizePixel = 0,
+				BackgroundColor3 = FromRGB(41, 37, 45)
+			}):AddToTheme({BackgroundColor3 = "Border"})
+
+			Items["Content"] = Instances:Create("Frame", {
+				Parent = Items["Section"].Instance,
+				Name = "\0",
+				BorderColor3 = FromRGB(0, 0, 0),
+				BorderSizePixel = 0,
+				BackgroundTransparency = 1,
+				Position = UDim2New(0, 8 * MobileScale, 0, 38 * MobileScale),
+				Size = UDim2New(1, -16 * MobileScale, 0, 0),
+				ZIndex = 2,
+				AutomaticSize = Enum.AutomaticSize.Y,
+				BackgroundColor3 = FromRGB(255, 255, 255)
+			})
+
+			Instances:Create("UIListLayout", {
+				Parent = Items["Content"].Instance,
+				Name = "\0",
+				Padding = UDimNew(0, 6 * MobileScale),
+				SortOrder = Enum.SortOrder.LayoutOrder
+			})
+
+			Section.Items = Items
+		end
+
+		return setmetatable(Section, Library.Sections)
+	end
+
+	Library.Pages.ImageSection = function(self, Properties)
+		Properties = Properties or { }
+
+		local Section = {
+			Window = self.Window,
+			Page = self,
+
+			Name = Properties.Name or Properties.name or "ImageSection",
+			Side = Properties.Side or Properties.side or 1,
+			Images  = Properties.Images or Properties.images or {
+				["Scary Cat"] = "115002736787206",
+			},
+
+			Items = { }
+		}
+
+		local Items = { } do
+			Items["Section"] = Instances:Create("Frame", {
+				Parent = Section.Page.ColumnsData[Section.Side].Instance,
+				Name = "\0",
+				BorderSizePixel = 0,
+				Size = UDim2New(1, 0, 0, 45 * MobileScale),
+				BorderColor3 = FromRGB(0, 0, 0),
+				ZIndex = 2,
+				AutomaticSize = Enum.AutomaticSize.Y,
+				BackgroundColor3 = FromRGB(22, 20, 24)
+			})  Items["Section"]:AddToTheme({BackgroundColor3 = "Inline"})
+
+			Instances:Create("UICorner", {
+				Parent = Items["Section"].Instance,
+				Name = "\0",
+				CornerRadius = UDimNew(0, 5 * MobileScale)
+			})
+
+			Instances:Create("UIGradient", {
+				Parent = Items["Section"].Instance,
+				Name = "\0"
+			})
+
+			Items["Text"] = Instances:Create("TextLabel", {
+				Parent = Items["Section"].Instance,
+				Name = "\0",
+				FontFace = Library.Font,
+				TextColor3 = FromRGB(255, 255, 255),
+				BorderColor3 = FromRGB(0, 0, 0),
+				Text = Section.Name,
+				AutomaticSize = Enum.AutomaticSize.X,
+				Size = UDim2New(0, 0, 0, 15 * MobileScale),
+				BackgroundTransparency = 1,
+				Position = UDim2New(0, 8 * MobileScale, 0, 8 * MobileScale),
+				BorderSizePixel = 0,
+				ZIndex = 2,
+				TextSize = 14 * MobileScale,
+				BackgroundColor3 = FromRGB(255, 255, 255)
+			})  Items["Text"]:AddToTheme({TextColor3 = "Text"})
+
+			Instances:Create("Frame", {
+				Parent = Items["Section"].Instance,
+				Name = "\0",
+				Size = UDim2New(1, -16 * MobileScale, 0, 1),
+				Position = UDim2New(0, 8 * MobileScale, 0, 28 * MobileScale),
+				BorderColor3 = FromRGB(0, 0, 0),
+				ZIndex = 2,
+				BorderSizePixel = 0,
+				BackgroundColor3 = FromRGB(41, 37, 45)
+			}):AddToTheme({BackgroundColor3 = "Border"})
+
+			Instances:Create("UIPadding", {
+				Parent = Items["Section"].Instance,
+				Name = "\0",
+				PaddingBottom = UDimNew(0, 8 * MobileScale)
+			})
+
+			Items["Image"] = Instances:Create("ImageLabel", {
+				Parent = Items["Section"].Instance,
+				Name = "\0",
+				ScaleType = Enum.ScaleType.Fit,
+				BorderColor3 = FromRGB(0, 0, 0),
+				Size = UDim2New(1, -16 * MobileScale, 0, (IsMobile and 179 or 279) * MobileScale),
+				Image = "rbxassetid://",
+				BackgroundTransparency = 1,
+				Position = UDim2New(0, 8 * MobileScale, 0, 35 * MobileScale),
+				ZIndex = 2,
+				BorderSizePixel = 0,
+				BackgroundColor3 = FromRGB(255, 255, 255)
+			})
+
+			Section.Items = Items
+		end 
+
+		local ImagesDropdown, ImagesDropdownItems = Components.Dropdown({
+			Name = "Images",
+			Parent = Items["Section"],
+			Flag = "Images"..Section.Name,
+			Items = { },
+			Default = nil,
+			Multi = false,
+			Page = Section.Page,
+			Window = Section.Window,
+			IsLabelDropdown = false,
+			Disabled = false
+		})
+
+		ImagesDropdownItems["Dropdown"].Instance.Position = UDim2New(0, 8 * MobileScale, 0, Items["Image"].Instance.AbsoluteSize.Y + 46 * MobileScale)
+		ImagesDropdownItems["Dropdown"].Instance.Size = UDim2New(1, -16 * MobileScale, 0, 25 * MobileScale)
+
+		for Index, Value in Section.Images do 
+			ImagesDropdown:Add(Index)
+		end
+
+		ImagesDropdown.OnChanged = function(Value)
+			local ImageData = Section.Images[Value] 
+
+			if not ImageData then
+				Items["Image"].Instance.Image = "rbxassetid://"
+				return 
+			end
+
+			Items["Image"].Instance.Image = "rbxassetid://"..ImageData
+		end
+
+		return setmetatable(Section, Library.Sections)
+	end
+
+	Library.Pages.ViewportSection = function(self, Properties)
+		Properties = Properties or { }
+
+		local Section = {
+			Window = self.Window,
+			Page = self,
+
+			Name = Properties.Name or Properties.name or "Section",
+			Side = Properties.Side or Properties.side or "Left",
+			Part = Properties.Part or Properties.part or nil,
+
+			Items = { }
+		}
+
+		local Items = { } do
+			Items["Section"] = Instances:Create("TextButton", {
+				Parent = Section.Page.ColumnsData[Section.Side].Instance,
+				Name = "\0",
+				AutoButtonColor = false,
+				Text = "",
+				BorderSizePixel = 0,
+				Size = UDim2New(1, 0, 0, 45 * MobileScale),
+				BorderColor3 = FromRGB(0, 0, 0),
+				ZIndex = 2,
+				AutomaticSize = Enum.AutomaticSize.Y,
+				BackgroundColor3 = FromRGB(22, 20, 24)
+			})  Items["Section"]:AddToTheme({BackgroundColor3 = "Inline"})
+
+			Instances:Create("UICorner", {
+				Parent = Items["Section"].Instance,
+				Name = "\0",
+				CornerRadius = UDimNew(0, 5 * MobileScale)
+			})
+
+			Instances:Create("UIGradient", {
+				Parent = Items["Section"].Instance,
+				Name = "\0"
+			})
+
+			Items["Text"] = Instances:Create("TextLabel", {
+				Parent = Items["Section"].Instance,
+				Name = "\0",
+				FontFace = Library.Font,
+				TextColor3 = FromRGB(255, 255, 255),
+				BorderColor3 = FromRGB(0, 0, 0),
+				Text = Section.Name,
+				AutomaticSize = Enum.AutomaticSize.X,
+				Size = UDim2New(0, 0, 0, 15 * MobileScale),
+				BackgroundTransparency = 1,
+				Position = UDim2New(0, 8 * MobileScale, 0, 8 * MobileScale),
+				BorderSizePixel = 0,
+				ZIndex = 2,
+				TextSize = 14 * MobileScale,
+				BackgroundColor3 = FromRGB(255, 255, 255)
+			})  Items["Text"]:AddToTheme({TextColor3 = "Text"})
+
+			Instances:Create("Frame", {
+				Parent = Items["Section"].Instance,
+				Name = "\0",
+				Size = UDim2New(1, -16 * MobileScale, 0, 1),
+				Position = UDim2New(0, 8 * MobileScale, 0, 28 * MobileScale),
+				BorderColor3 = FromRGB(0, 0, 0),
+				ZIndex = 2,
+				BorderSizePixel = 0,
+				BackgroundColor3 = FromRGB(41, 37, 45)
+			}):AddToTheme({BackgroundColor3 = "Border"})
+
+			Instances:Create("UIPadding", {
+				Parent = Items["Section"].Instance,
+				Name = "\0",
+				PaddingBottom = UDimNew(0, 8 * MobileScale)
+			})
+
+			Items["PartViewer"] = Instances:Create("ViewportFrame", {
+				Parent = Items["Section"].Instance,
+				Name = "\0",
+				BorderColor3 = FromRGB(0, 0, 0),
+				BackgroundTransparency = 1,
+				Position = UDim2New(0, 8 * MobileScale, 0, 35 * MobileScale),
+				Size = UDim2New(1, -16 * MobileScale, 0, 225 * MobileScale),
+				ZIndex = 2,
+				BorderSizePixel = 0,
+				BackgroundColor3 = FromRGB(255, 255, 255)
+			})
+		end
+
+		local ViewportCamera = InstanceNew("Camera")
+		Items["PartViewer"].Instance.CurrentCamera = ViewportCamera
+
+		local ClonedPart = Section.Part:Clone()
+		ClonedPart.Anchored = true
+		ClonedPart.Parent = Items["PartViewer"].Instance
+		ClonedPart.Position = Vector3New(0, 5, 0)
+
+		local Distance = MathMax(Section.Part.Size.X, Section.Part.Size.Y, Section.Part.Size.Z) * 3
+		ViewportCamera.CFrame = CFrameNew(0, Distance * 0.5, Distance)
+
+		local LastPosition 
+		local IsRotating = false
+		local Sensitivity = 0.7
+
+		Items["PartViewer"]:Connect("InputBegan", function(Input)
+			if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
+				IsRotating = true
+				LastPosition = Input.Position
+
+				Input.Changed:Connect(function()
+					if Input.UserInputState == Enum.UserInputState.End then
+						IsRotating = false
+						LastPosition = nil
+					end
+				end)
+			end
+		end)
+
+		Items["PartViewer"]:Connect("InputChanged", function(Input)
+			if Input.UserInputType == Enum.UserInputType.MouseMovement or Input.UserInputType == Enum.UserInputType.Touch then
+				if not LastPosition then 
+					return
+				end
+
+				if not IsRotating then
+					return
+				end
+
+				local Delta = Input.Position - LastPosition
+				ClonedPart.CFrame = ClonedPart.CFrame * CFrameAngles(0, MathRad(-Delta.X * Sensitivity), 0)
+				ClonedPart.CFrame = ClonedPart.CFrame * CFrameAngles(MathRad(Delta.Y * Sensitivity), 0, 0)
+				LastPosition = Input.Position
+			end
+		end)
+
+		return setmetatable(Section, Library.Sections)
+	end
+
+	Library.Sections.Toggle = function(self, Properties)
+		Properties = Properties or { }
+
+		local Toggle = {
+			Window = self.Window,
+			Page = self.Page,
+			Section = self,
+
+			Name = Properties.Name or Properties.name or "Toggle",
+			Flag = Properties.Flag or Properties.flag or Library:NextFlag(),
+			Default = Properties.Default or Properties.default or false,
+			Callback = Properties.Callback or Properties.callback or function() end,
+			Disabled = Properties.Disabled or Properties.disabled or false,
+			OnChanged = Properties.OnChanged or Properties.onchanged or function() end,
+			Tooltip = Properties.Tooltip or Properties.tooltip or nil,
+
+			Count = 0
+		}
+
+		local NewToggle, ToggleItems = Components.Toggle({
+			Name = Toggle.Name,
+			Parent = Toggle.Section.Items["Content"],
+			Flag = Toggle.Flag,
+			Default = Toggle.Default,
+			Page = Toggle.Page,
+			Section = Toggle.Section,
+			OnChanged = Toggle.OnChanged,
+			Callback = Toggle.Callback,
+			Disabled = Toggle.Disabled
+		})
+
+		ToggleItems["Toggle"]:Tooltip(Toggle.Tooltip)
+
+		function Toggle:Set(Bool)
+			NewToggle:Set(Bool)
+		end
+
+		function Toggle:SetText(Text)
+			NewToggle:SetText(Text)
+		end
+
+		function Toggle:SetDisabled(Bool)
+			NewToggle:SetDisabled(Bool)
+		end
+
+		function Toggle:SetVisible(Bool)
+			NewToggle:SetVisible(Bool)
+		end
+
+		function Toggle:OnChanged(Callback)
+			NewToggle.OnChanged = Callback
+			Callback(NewToggle.Value) 
+		end
+
+		function Toggle:Colorpicker(Properties)
+			Properties = Properties or { }
+
+			local Colorpicker = {
+				Window = self.Window,
+				Page = self.Page,
+				Section = self.Section,
+
+				Name = Properties.Name or Properties.name or "Colorpicker",
+				Flag = Properties.Flag or Properties.flag or Library:NextFlag(),
+				Alpha = Properties.Alpha or Properties.alpha or 0,
+				Default = Properties.Default or Properties.default or Color3.fromRGB(255, 255, 255),
+				Callback = Properties.Callback or Properties.callback or function() end,
+				OnChanged = Properties.OnChanged or Properties.onchanged or function() end,
+				Disabled = Properties.Disabled or Properties.disabled or false
+			}
+
+			Toggle.Count += 1
+
+			local NewColorpicker, ColorpickerItems = Components.Colorpicker({
+				Name = Colorpicker.Name,
+				Count = Toggle.Count,
+				Parent = ToggleItems["SubElementsHolder"],
+				Flag = Colorpicker.Flag,
+				Default = Colorpicker.Default,
+				Alpha = Colorpicker.Alpha,
+				Page = Colorpicker.Page,
+				Section = Colorpicker.Section,
+				OnChanged = Colorpicker.OnChanged,
+				Window = Colorpicker.Window,
+				IsToggle = true,
+				Callback = Colorpicker.Callback,
+				Disabled = Colorpicker.Disabled
+			})
+
+			return NewColorpicker
+		end
+
+		function Toggle:Keybind(Properties)
+			Properties = Properties or { }
+
+			local Keybind = {
+				Window = self.Window,
+				Page = self.Page,
+				Section = self.Section,
+
+				Name = Properties.Name or Properties.name or "Keybind",
+				Flag = Properties.Flag or Properties.flag or Library:NextFlag(),
+				Default = Properties.Default or Properties.default or nil,
+				Mode = Properties.Mode or Properties.mode or "Toggle",
+				Callback = Properties.Callback or Properties.callback or function() end,
+				OnChanged = Properties.OnChanged or Properties.onchanged or function() end,
+			}
+
+			Toggle.Count += 1
+
+			local NewKeybind, KeybindItems = Components.Keybind({
+				Name = Keybind.Name,
+				Count = Toggle.Count,
+				Parent = ToggleItems["SubElementsHolder"],
+				Flag = Keybind.Flag,
+				Default = Keybind.Default,
+				Mode = Keybind.Mode,
+				IsToggle = true,
+				Page = Keybind.Page,
+				Section = Keybind.Section,
+				OnChanged = Keybind.OnChanged,
+				Window = Keybind.Window,
+				Callback = Keybind.Callback
+			})
+
+			return NewKeybind
+		end
+
+		return Toggle
+	end
+
+	Library.Sections.Checkbox = function(self, Properties)
+		Properties = Properties or { }
+
+		local Checkbox = {
+			Window = self.Window,
+			Page = self.Page,
+			Section = self,
+
+			Name = Properties.Name or Properties.name or "Checkbox",
+			Flag = Properties.Flag or Properties.flag or Library:NextFlag(),
+			Default = Properties.Default or Properties.default or false,
+			Callback = Properties.Callback or Properties.callback or function() end,
+			Disabled = Properties.Disabled or Properties.disabled or false,
+			OnChanged = Properties.OnChanged or Properties.onchanged or function() end,
+			Tooltip = Properties.Tooltip or Properties.tooltip or nil,
+
+			Count = 0
+		}
+
+		local NewCheckbox, CheckboxItems = Components.Checkbox({
+			Name = Checkbox.Name,
+			Parent = Checkbox.Section.Items["Content"],
+			Flag = Checkbox.Flag,
+			Default = Checkbox.Default,
+			Page = Checkbox.Page,
+			Section = Checkbox.Section,
+			OnChanged = Checkbox.OnChanged,
+			Callback = Checkbox.Callback,
+			Disabled = Checkbox.Disabled
+		})
+
+		CheckboxItems["Checkbox"]:Tooltip(Checkbox.Tooltip)
+
+		function Checkbox:Set(Bool)
+			NewCheckbox:Set(Bool)
+		end
+
+		function Checkbox:SetText(Text)
+			NewCheckbox:SetText(Text)
+		end
+
+		function Checkbox:SetDisabled(Bool)
+			NewCheckbox:SetDisabled(Bool)
+		end
+
+		function Checkbox:SetVisible(Bool)
+			NewCheckbox:SetVisible(Bool)
+		end
+
+		function Checkbox:OnChanged(Callback)
+			NewCheckbox.OnChanged = Callback
+			Callback(NewCheckbox.Value) 
+		end
+
+		function Checkbox:Colorpicker(Properties)
+			Properties = Properties or { }
+
+			local Colorpicker = {
+				Window = self.Window,
+				Page = self.Page,
+				Section = self.Section,
+
+				Name = Properties.Name or Properties.name or "Colorpicker",
+				Flag = Properties.Flag or Properties.flag or Library:NextFlag(),
+				Alpha = Properties.Alpha or Properties.alpha or 0,
+				Default = Properties.Default or Properties.default or Color3.fromRGB(255, 255, 255),
+				Callback = Properties.Callback or Properties.callback or function() end,
+				OnChanged = Properties.OnChanged or Properties.onchanged or function() end,
+				Disabled = Properties.Disabled or Properties.disabled or false
+			}
+
+			Checkbox.Count += 1
+
+			local NewColorpicker, ColorpickerItems = Components.Colorpicker({
+				Name = Colorpicker.Name,
+				Count = Checkbox.Count,
+				Parent = CheckboxItems["SubElementsHolder"],
+				Flag = Colorpicker.Flag,
+				Default = Colorpicker.Default,
+				Alpha = Colorpicker.Alpha,
+				Page = Colorpicker.Page,
+				Section = Colorpicker.Section,
+				OnChanged = Colorpicker.OnChanged,
+				Window = Colorpicker.Window,
+				IsCheckbox = true,
+				Callback = Colorpicker.Callback,
+				Disabled = Colorpicker.Disabled
+			})
+
+			return NewColorpicker
+		end
+
+		function Checkbox:Keybind(Properties)
+			Properties = Properties or { }
+
+			local Keybind = {
+				Window = self.Window,
+				Page = self.Page,
+				Section = self.Section,
+
+				Name = Properties.Name or Properties.name or "Keybind",
+				Flag = Properties.Flag or Properties.flag or Library:NextFlag(),
+				Default = Properties.Default or Properties.default or nil,
+				Mode = Properties.Mode or Properties.mode or "Toggle",
+				Callback = Properties.Callback or Properties.callback or function() end,
+				OnChanged = Properties.OnChanged or Properties.onchanged or function() end,
+			}
+
+			Checkbox.Count += 1
+
+			local NewKeybind, KeybindItems = Components.Keybind({
+				Name = Keybind.Name,
+				Count = Checkbox.Count,
+				Parent = CheckboxItems["SubElementsHolder"],
+				Flag = Keybind.Flag,
+				Default = Keybind.Default,
+				Mode = Keybind.Mode,
+				IsCheckbox = true,
+				Page = Keybind.Page,
+				Section = Keybind.Section,
+				OnChanged = Keybind.OnChanged,
+				Window = Keybind.Window,
+				Callback = Keybind.Callback
+			})
+
+			return NewKeybind
+		end
+
+		return Checkbox, NewCheckbox
+	end
+
+	Library.Sections.Button = function(self, Properties)
+		Properties = Properties or { }
+
+		local Button = {
+			Window = self.Window,
+			Page = self.Page,
+			Section = self
+		}
+
+		local NewButton, ButtonItems = Components.Button({
+			Parent = Button.Section.Items["Content"],
+			Page = Button.Page,
+		})
+
+		function Button:Add(Text, Callback, Confirmation, Disabled, Tooltip)
+			local _NewButton = {
+				Text = Text,
+				Callback = Callback,
+				Confirmation = Confirmation,
+				Disabled = Disabled
+			}
+
+			local NewAddedButton, NewAddedButtonItems = NewButton:Add(Text, Callback, Confirmation, Disabled)
+			NewAddedButtonItems["NewButton"]:Tooltip(Tooltip)
+
+			function _NewButton:SetText(Text)
+				NewAddedButton:SetText(Text)
+			end
+
+			function _NewButton:SetVisible(Bool)
+				NewAddedButton:SetVisible(Bool)
+			end
+
+			function _NewButton:SetDisabled(Bool)
+				NewAddedButton:SetDisabled(Bool)
+			end
+
+			function _NewButton:OnPressed(Callback)
+				NewAddedButton.OnPressed = Callback
+				Callback()
+			end
+
+			return _NewButton
+		end
+
+		function Button:SetVisible(Bool)
+			NewButton:SetVisible(Bool)
+		end
+
+		return Button
+	end
+
+	Library.Sections.Slider = function(self, Properties)
+		Properties = Properties or { }
+
+		local Slider = {
+			Window = self.Window,
+			Page = self.Page,
+			Section = self,
+
+			Name = Properties.Name or Properties.name or "Slider",
+			Flag = Properties.Flag or Properties.flag or Library:NextFlag(),
+			Default = Properties.Default or Properties.default or 0,
+			Min = Properties.Min or Properties.min or 0,
+			Max = Properties.Max or Properties.max or 100,
+			Decimals = Properties.Decimals or Properties.decimals or 1,
+			Suffix = Properties.Suffix or Properties.suffix or "",
+			Callback = Properties.Callback or Properties.callback or function() end,
+			OnChanged = Properties.OnChanged or Properties.onchanged or function() end,
+			Disabled = Properties.Disabled or Properties.disabled or false,
+			Tooltip = Properties.Tooltip or Properties.tooltip or nil
+		}
+
+		local NewSlider, SliderItems = Components.Slider({
+			Name = Slider.Name,
+			Parent = Slider.Section.Items["Content"],
+			Flag = Slider.Flag,
+			Default = Slider.Default,
+			Min = Slider.Min,
+			Max = Slider.Max,
+			Suffix = Slider.Suffix,
+			Decimals = Slider.Decimals,
+			Page = Slider.Page,
+			Section = Slider.Section,
+			OnChanged = Slider.OnChanged,
+			Callback = Slider.Callback,
+			Disabled = Slider.Disabled
+		})
+
+		SliderItems["Slider"]:Tooltip(Slider.Tooltip)
+
+		function Slider:Set(Value)
+			NewSlider:Set(Value)
+		end
+
+		function Slider:SetDisabled(Bool)
+			NewSlider:SetDisabled(Bool)
+		end
+
+		function Slider:SetVisible(Bool)
+			NewSlider:SetVisible(Bool)
+		end
+
+		function Slider:SetMin(Value)
+			NewSlider:SetMin(Value)
+		end
+
+		function Slider:SetMax(Value)
+			NewSlider:SetMax(Value)
+		end
+
+		function Slider:OnChanged(Callback)
+			NewSlider.OnChanged = Callback
+			Callback(NewSlider.Value)
+		end
+
+		function Slider:SetSuffix(Text)
+			NewSlider:SetSuffix(Text)
+		end
+
+		function Slider:SetText(Text)
+			NewSlider:SetText(Text)
+		end
+
+		return Slider
+	end
+
+	Library.Sections.Dropdown = function(self, Properties)
+		Properties = Properties or { }
+
+		local Dropdown = {
+			Window = self.Window,
+			Page = self.Page,
+			Section = self,
+
+			Name = Properties.Name or Properties.name or "Dropdown",
+			Flag = Properties.Flag or Properties.flag or Library:NextFlag(),
+			Default = Properties.Default or Properties.default or nil,
+			Items = Properties.Items or Properties.items or { },
+			Callback = Properties.Callback or Properties.callback or function() end,
+			Multi = Properties.Multi or Properties.multi or false,
+			OnChanged = Properties.OnChanged or Properties.onchanged or function() end,
+			IsLabelDropdown = Properties.IsLabelDropdown or Properties.islabeldropdown or false,
+			Disabled = Properties.Disabled or Properties.disabled or false,
+			Tooltip = Properties.Tooltip or Properties.tooltip or nil
+		}
+
+		local NewDropdown, DropdownItems = Components.Dropdown({
+			Name = Dropdown.Name,
+			Parent = Dropdown.Section.Items["Content"],
+			Flag = Dropdown.Flag,
+			Items = Dropdown.Items,
+			Default = Dropdown.Default,
+			Callback = Dropdown.Callback,
+			Multi = Dropdown.Multi,
+			Page = Dropdown.Page,
+			Window = Dropdown.Window,
+			IsLabelDropdown = Dropdown.IsLabelDropdown,
+			OnChanged = Dropdown.OnChanged,
+			Disabled = Dropdown.Disabled
+		})
+
+		DropdownItems["Dropdown"]:Tooltip(Dropdown.Tooltip)
+
+		function Dropdown:Set(Items)
+			NewDropdown:Set(Items)
+		end
+
+		function Dropdown:OnChanged(Callback)
+			NewDropdown.OnChanged = Callback
+			Callback(NewDropdown.Value)
+		end
+
+		function Dropdown:Remove(Option)
+			NewDropdown:Remove(Option)
+		end
+
+		function Dropdown:Add(Option, Icon)
+			NewDropdown:Add(Option, Icon)
+		end
+
+		function Dropdown:Clear()
+			NewDropdown:Clear()
+		end
+
+		function Dropdown:SetDisabled(Bool)
+			NewDropdown:SetDisabled(Bool)
+		end
+
+		function Dropdown:SetVisible(Bool)
+			NewDropdown:SetVisible(Bool)
+		end
+
+		function Dropdown:Refresh(List)
+			NewDropdown:Refresh(List)
+		end
+
+		function Dropdown:Get()
+			return NewDropdown:Get()
+		end
+
+		function Dropdown:SetText(Text)
+			NewDropdown:SetText(Text)
+		end
+
+		function Dropdown:SetMulti(Bool)
+			NewDropdown:SetMulti(Bool)
+		end
+
+		return Dropdown
+	end
+
+	Library.Sections.ToggleDropdown = function(self, Properties)
+		Properties = Properties or { }
+
+		local Dropdown = {
+			Window = self.Window,
+			Page = self.Page,
+			Section = self,
+
+			Name = Properties.Name or Properties.name or "Dropdown",
+			Flag = Properties.Flag or Properties.flag or Library:NextFlag(),
+			Default = Properties.Default or Properties.default or nil,
+			Items = Properties.Items or Properties.items or { },
+			Callback = Properties.Callback or Properties.callback or function() end,
+			Multi = Properties.Multi or Properties.multi or false,
+			OnChanged = Properties.OnChanged or Properties.onchanged or function() end,
+			Disabled = Properties.Disabled or Properties.disabled or false,
+			Tooltip = Properties.Tooltip or Properties.tooltip or nil
+		}
+
+		local NewDropdown, DropdownItems = Components.ToggleDropdown({
+			Name = Dropdown.Name,
+			Parent = Dropdown.Section.Items["Content"],
+			Flag = Dropdown.Flag,
+			Items = Dropdown.Items,
+			Default = Dropdown.Default,
+			Callback = Dropdown.Callback,
+			Multi = Dropdown.Multi,
+			Page = Dropdown.Page,
+			Window = Dropdown.Window,
+			OnChanged = Dropdown.OnChanged,
+			Disabled = Dropdown.Disabled
+		})
+
+		DropdownItems["Dropdown"]:Tooltip(Dropdown.Tooltip)
+
+		function Dropdown:Set(Items)
+			NewDropdown:Set(Items)
+		end
+
+		function Dropdown:OnChanged(Callback)
+			NewDropdown.OnChanged = Callback
+			Callback(NewDropdown.Value)
+		end
+
+		function Dropdown:Remove(Option)
+			NewDropdown:Remove(Option)
+		end
+
+		function Dropdown:Add(Option, Icon)
+			NewDropdown:Add(Option, Icon)
+		end
+
+		function Dropdown:Clear()
+			NewDropdown:Clear()
+		end
+
+		function Dropdown:SetDisabled(Bool)
+			NewDropdown:SetDisabled(Bool)
+		end
+
+		function Dropdown:SetVisible(Bool)
+			NewDropdown:SetVisible(Bool)
+		end
+
+		function Dropdown:Refresh(List)
+			NewDropdown:Refresh(List)
+		end
+
+		function Dropdown:Get()
+			return NewDropdown:Get()
+		end
+
+		function Dropdown:SetText(Text)
+			NewDropdown:SetText(Text)
+		end
+
+		function Dropdown:SetMulti(Bool)
+			NewDropdown:SetMulti(Bool)
+		end
+
+		return Dropdown
+	end
+
+	Library.Sections.Label = function(self, Text, Alignment, Tooltip, Outline)
+		local Label = {
+			Window = self.Window,
+			Page = self.Page,
+			Section = self,
+
+			Name = Text or "Label",
+			Alignment = Alignment or "Left",
+			Tooltip = Tooltip or nil,
+
+			Count = 0
+		}
+
+		local Items = {} do
+			Items["Label"] = Instances:Create("Frame", {
+				Parent = Label.Section.Items["Content"].Instance,
+				Name = "\0",
+				BackgroundTransparency = 1,
+				Size = UDim2New(1, 0, 0, 0),
+				AutomaticSize = Enum.AutomaticSize.Y,
+				BorderColor3 = FromRGB(0, 0, 0),
+				ZIndex = 2,
+				BorderSizePixel = 0,
+				BackgroundColor3 = FromRGB(255, 255, 255)
+			})
+
+			Items["Label"]:Tooltip(Label.Tooltip)
+
+			Items["Text"] = Instances:Create("TextLabel", {
+				Parent = Items["Label"].Instance,
+				Name = "\0",
+				FontFace = Library.Font,
+				TextColor3 = FromRGB(255, 255, 255),
+				BorderColor3 = FromRGB(0, 0, 0),
+				Text = Label.Name,
+				TextXAlignment = Enum.TextXAlignment[Label.Alignment],
+				TextYAlignment = Enum.TextYAlignment.Top,
+				AutomaticSize = Enum.AutomaticSize.Y,
+				TextWrapped = true,
+				AnchorPoint = Vector2New(0, 0),
+				Size = UDim2New(1, 0, 0, 0),
+				RichText = true,
+				BackgroundTransparency = 1,
+				Position = UDim2New(0, 0, 0, 0),
+				BorderSizePixel = 0,
+				ZIndex = 2,
+				TextSize = 14 * MobileScale,
+				BackgroundColor3 = FromRGB(255, 0, 255)
+			})
+			Items["Text"]:AddToTheme({ TextColor3 = "Text" })
+
+			if Outline then
+				Instances:Create("UIStroke", {
+					Parent = Items["Text"].Instance,
+					Name = "\0",
+					ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual,
+					LineJoinMode = Enum.LineJoinMode.Round,
+					Color = FromRGB(0, 0, 0),
+					Thickness = 1
+				})
+			end
+		end
+
+		function Label:Colorpicker(Properties)
+			Properties = Properties or { }
+
+			local Colorpicker = {
+				Window = self.Window,
+				Page = self.Page,
+				Section = self.Section,
+
+				Name = Properties.Name or Properties.name or "Colorpicker",
+				Flag = Properties.Flag or Properties.flag or Library:NextFlag(),
+				Alpha = Properties.Alpha or Properties.alpha or 0,
+				Default = Properties.Default or Properties.default or Color3.fromRGB(255, 255, 255),
+				Callback = Properties.Callback or Properties.callback or function() end,
+				OnChanged = Properties.OnChanged or Properties.onchanged or function() end,
+				Disabled = Properties.Disabled or Properties.disabled or false
+			}
+
+			Label.Count += 1
+
+			local NewColorpicker, ColorpickerItems = Components.Colorpicker({
+				Name = Colorpicker.Name,
+				Count = Label.Count,
+				Parent = Items["Label"],
+				Flag = Colorpicker.Flag,
+				Default = Colorpicker.Default,
+				Alpha = Colorpicker.Alpha,
+				Page = Colorpicker.Page,
+				Section = Colorpicker.Section,
+				OnChanged = Colorpicker.OnChanged,
+				Window = Colorpicker.Window,
+				Callback = Colorpicker.Callback,
+				Disabled = Colorpicker.Disabled
+			})
+
+			return NewColorpicker
+		end
+
+		function Label:Keybind(Properties)
+			Properties = Properties or { }
+
+			local Keybind = {
+				Window = self.Window,
+				Page = self.Page,
+				Section = self.Section,
+
+				Name = Properties.Name or Properties.name or "Keybind",
+				Flag = Properties.Flag or Properties.flag or Library:NextFlag(),
+				Default = Properties.Default or Properties.default or nil,
+				Mode = Properties.Mode or Properties.mode or "Toggle",
+				Callback = Properties.Callback or Properties.callback or function() end,
+				OnChanged = Properties.OnChanged or Properties.onchanged or function() end,
+			}
+
+			Label.Count += 1
+
+			local NewKeybind, KeybindItems = Components.Keybind({
+				Name = Keybind.Name,
+				Count = Label.Count,
+				Parent = Items["Label"],
+				Flag = Keybind.Flag,
+				Default = Keybind.Default,
+				Mode = Keybind.Mode,
+				Page = Keybind.Page,
+				Section = Keybind.Section,
+				OnChanged = Keybind.OnChanged,
+				Window = Keybind.Window,
+				Callback = Keybind.Callback
+			})
+
+			return NewKeybind
+		end
+
+		function Label:SetText(Text)
+			Text = tostring(Text)
+			Items["Text"].Instance.Text = Text
+		end
+
+		function Label:SetTextColor(Color)
+			Library:RemoveFromTheme(Items["Text"])
+			task.wait(0.1)
+			Items["Text"].Instance.TextColor3 = Color
+		end
+
+		local SearchData = {
+			Name = Label.Name,
+			Item = Items["Label"]
+		}
+
+		local PageSearchData = Library.SearchItems[Label.Page]
+
+		if not PageSearchData then 
+			return 
+		end
+
+		TableInsert(PageSearchData, SearchData)
+
+		return Label 
+	end
+
+	Library.Sections.Textbox = function(self, Properties)
+		Properties = Properties or { }
+
+		local Textbox = {
+			Window = self.Window,
+			Page = self.Page,
+			Section = self,
+
+			Name = Properties.Name or Properties.name or "Textbox",
+			Flag = Properties.Flag or Properties.flag or Library:NextFlag(),
+			Default = Properties.Default or Properties.default or "",
+			Placeholder = Properties.Placeholder or Properties.placeholder or "",
+			Callback = Properties.Callback or Properties.callback or function() end,
+			OnChanged = Properties.OnChanged or Properties.onchanged or function() end,
+			Disabled = Properties.Disabled or Properties.disabled or false,
+			Tooltip = Properties.Tooltip or Properties.tooltip or nil
+		}
+
+		local NewTextbox, TextboxItems = Components.Textbox({
+			Name = Textbox.Name,
+			Flag = Textbox.Flag,
+			Default = Textbox.Default,
+			Parent = Textbox.Section.Items["Content"],
+			Placeholder = Textbox.Placeholder,
+			Page = Textbox.Page,
+			Section = Textbox.Section,
+			OnChanged = Textbox.OnChanged,
+			Window = Textbox.Window,
+			Callback = Textbox.Callback,
+			Disabled = Textbox.Disabled
+		})
+
+		TextboxItems["Textbox"]:Tooltip(Textbox.Tooltip)
+
+		function Textbox:Set(Value)
+			NewTextbox:Set(Value)
+		end
+
+		function Textbox:SetText(Text)
+			NewTextbox:SetText(Text)
+		end
+
+		function Textbox:SetDisabled(Bool)
+			NewTextbox:SetDisabled(Bool)
+		end
+
+		function Textbox:SetVisible(Bool)
+			NewTextbox:SetVisible(Bool)
+		end
+
+		return Textbox
+	end
+
+	Library.CheckForAutoLoad = function(self)
+		local Config = readfile(self.Folders.Directory .. "/autoload.json")
+
+		if not Config or Config == "" then 
+			return 
+		end
+
+		local Success, Error = Library:LoadConfig(Config)
+
+		if Success then 
+			Library:Notification("Success!", "Succesfully autoloaded config.", 5)
+
+			task.wait(0.3)
+
+			Library:Thread(function()
+				for Index, Value in Library.Theme do 
+					Library.Theme[Index] = Library.Flags["Theme" .. Index].Color
+					Library:ChangeTheme(Index, Library.Flags["Theme" .. Index].Color)
+				end    
+			end)
+		else
+			Library:Notification("Error!", "Failed to load config.", 5)
+		end
+	end
+
+	Library.CreateSettingsPage = function(self, Window, Watermark, KeybindList)
+		local SettingsPage = Window:Page({
+			Name = "Settings",
+			Columns = 2
+		})
+		do
+			do
+				do -- Configs
+					local ConfigsSection = SettingsPage:Section({Name = "Configs", Side = 2})
+
+					local ConfigSelected 
+					local ConfigName
+
+					do
+						local ConfigsDropdown = ConfigsSection:Dropdown({
+							Name = "Configs", 
+							Flag = "ConfigsList", 
+							Items = { }, 
+							Multi = false,
+							Callback = function(Value)
+								ConfigSelected = Value
+							end
+						})
+
+						ConfigsSection:Textbox({
+							Name = "Name", 
+							Default = "", 
+							Flag = "ConfigName", 
+							Placeholder = "...", 
+							Callback = function(Value)
+								ConfigName = Value
+							end
+						})
+
+						local CreateDeleteButton = ConfigsSection:Button()
+
+						CreateDeleteButton:Add("Create", function()
+							if ConfigName and ConfigName ~= "" then
+								writefile(Library.Folders.Configs .. "/" .. ConfigName .. tostring(game.GameId) .. ".json", Library:GetConfig())
+								Library:RefreshConfigsList(ConfigsDropdown)
+							end
+						end, false)
+
+						CreateDeleteButton:Add("Delete", function()
+							if ConfigSelected then
+								local CurrentConfigName = string.gsub(ConfigSelected, ".json", "")
+								CurrentConfigName ..= "" .. game.GameId .. ".json"
+								Library:DeleteConfig(CurrentConfigName)
+								Library:RefreshConfigsList(ConfigsDropdown)
+							end
+						end, false)
+
+						local LoadSaveButton = ConfigsSection:Button()
+
+						LoadSaveButton:Add("Load", function()
+							if ConfigSelected then
+								local CurrentConfigName = string.gsub(ConfigSelected, ".json", "")
+								CurrentConfigName ..= "" .. game.GameId .. ".json"
+								local Success, Result = Library:LoadConfig(readfile(Library.Folders.Configs .. "/" .. CurrentConfigName))
+
+								if Success then 
+									Library:Notification("Success!", "Succesfully loaded config.", 5)
+
+									task.wait(0.3)
+
+									Library:Thread(function()
+										for Index, Value in Library.Theme do 
+											Library.Theme[Index] = Library.Flags["Theme" .. Index].Color
+											Library:ChangeTheme(Index, Library.Flags["Theme" .. Index].Color)
+										end    
+									end)
+								else
+									Library:Notification("Error!", "Failed to load config. Report this to the developers:\n"..Result, 5)
+								end
+							end
+						end, false)
+
+						LoadSaveButton:Add("Save", function()
+							if ConfigSelected then
+								local CurrentConfigName = string.gsub(ConfigSelected, ".json", "")
+								CurrentConfigName ..= "" .. game.GameId .. ".json"  
+
+								local Success, Error = Library:SafeCall(function()
+									writefile(Library.Folders.Configs .. "/" .. CurrentConfigName, Library:GetConfig())
+								end)
+
+								if not Success then 
+									Library:Notification("Error!", "Failed to save config. Report this to the developers:\n"..Error, 5)
+								else
+									Library:Notification("Success!", "Succesfully saved config.", 5)
+								end
+							end
+						end, false)
+
+						local RefreshlistButton = ConfigsSection:Button()
+
+						RefreshlistButton:Add("Refresh", function()
+							Library:RefreshConfigsList(ConfigsDropdown)
+						end, false)
+
+						local AutoloadButton = ConfigsSection:Button()
+
+						AutoloadButton:Add("Set autoload", function()
+							if ConfigSelected then 
+								local CurrentConfigName = string.gsub(ConfigSelected, ".json", "")
+								CurrentConfigName ..= "" .. game.GameId .. ".json"
+								writefile(Library.Folders.Directory .. "/autoload.json", readfile(Library.Folders.Configs .. "/" .. CurrentConfigName))
+								Library:Notification("Success!", "Succesfully set autoload.", 5)
+							end
+						end)
+
+						AutoloadButton:Add("Clear autoload", function()
+							writefile(Library.Folders.Directory .. "/autoload.json", "")
+						end)
+
+						ConfigsSection:Toggle({
+							Name = "Watermark",
+							Flag = "WatermarkEnabled",
+							Default = false,
+							Callback = function(Value)
+								Watermark:SetVisible(Value)
+							end
+						})
+
+						ConfigsSection:Toggle({
+							Name = "Keybind list",
+							Flag = "Keybind list",
+							Default = false,
+							Callback = function(Value)
+								KeybindList:SetVisible(Value)
+							end
+						})
+
+						Library:RefreshConfigsList(ConfigsDropdown)
+					end
+				end
+
+				do -- Themes
+					local ThemeSection = SettingsPage:Section({Name = "Themes", Side = 1})
+
+					local ThemeSelected 
+					local ThemeName
+
+					do
+						local ThemesDropdown = ThemeSection:Dropdown({
+							Name = "Themes", 
+							Flag = "ThemesList", 
+							Items = { }, 
+							Multi = false,
+							Callback = function(Value)
+								ThemeSelected = Value
+							end
+						})
+
+						ThemeSection:Textbox({
+							Name = "Name", 
+							Default = "", 
+							Flag = "ThemeName", 
+							Placeholder = "...", 
+							Callback = function(Value)
+								ThemeName = Value
+							end
+						})
+
+						local CreateDeleteButton = ThemeSection:Button()
+
+						CreateDeleteButton:Add("Create", function()
+							if ThemeName and ThemeName ~= "" then
+								writefile(Library.Folders.Themes .. "/" .. ThemeName .. ".json", Library:GetConfig())
+								Library:RefreshConfigsList(ThemesDropdown)
+							end
+						end, false)
+
+						CreateDeleteButton:Add("Delete", function()
+							if ThemeSelected then
+								Library:DeleteConfig(ThemeSelected)
+								Library:RefreshConfigsList(ThemesDropdown)
+							end
+						end, false)
+
+						local LoadSaveButton = ThemeSection:Button()
+
+						LoadSaveButton:Add("Load", function()
+							if ThemeSelected then
+								local Success, Result = Library:LoadTheme(readfile(Library.Folders.Themes .. "/" .. ThemeSelected))
+
+								if Success then 
+									Library:Notification("Success!", "Succesfully loaded theme.", 5)
+
+									task.wait(0.3)
+
+									Library:Thread(function()
+										for Index, Value in Library.Theme do 
+											Library.Theme[Index] = Library.Flags["Theme" .. Index].Color
+											Library:ChangeTheme(Index, Library.Flags["Theme" .. Index].Color)
+										end    
+									end)
+								else
+									Library:Notification("Error!", "Failed to load theme. Report this to the developers:\n"..Result, 5)
+								end
+							end
+						end, false)
+
+						LoadSaveButton:Add("Save", function()
+							if ThemeSelected then  
+								local Success, Error = Library:SafeCall(function()
+									writefile(Library.Folders.Themes .. "/" .. ThemeSelected, Library:GetTheme())
+								end)
+
+								if not Success then 
+									Library:Notification("Error!", "Failed to save theme. Report this to the developers:\n"..Error, 5)
+								else
+									Library:Notification("Success!", "Succesfully saved theme.", 5)
+								end
+							end
+						end, false)
+
+						local RefreshlistButton = ThemeSection:Button()
+
+						RefreshlistButton:Add("Refresh", function()
+							Library:RefreshThemesList(ThemesDropdown)
+						end, false)
+
+						local ThemesPresetDropdown = ThemeSection:Dropdown({
+							Name = "Themes Preset", 
+							Flag = "ThemesPresetList", 
+							Items = { }, 
+							Multi = false,
+							Callback = function(Value)
+								local ThemeData = Library.Themes[Value]
+
+								if not ThemeData then 
+									return
+								end
+
+								for Index, Value in Library.Theme do 
+									Library.Theme[Index] = ThemeData[Index]
+									Library:ChangeTheme(Index, ThemeData[Index])
+
+									Library.ThemeColorpickers[Index]:Set(ThemeData[Index])
+								end
+
+								task.wait(0.3)
+
+								Library:Thread(function()
+									for Index, Value in Library.Theme do 
+										Library.Theme[Index] = Library.Flags["Theme" .. Index].Color
+										Library:ChangeTheme(Index, Library.Flags["Theme" .. Index].Color)
+									end    
+								end)
+							end
+						})
+
+						for Index, Value in Library.Themes do 
+							ThemesPresetDropdown:Add(Index)
+						end
+
+						Library:RefreshThemesList(ThemesDropdown)
+					end
+				end
+
+				do -- Settings
+					local SettingsSection = SettingsPage:Section({Name = "Settings", Side = 2})
+
+					do
+						SettingsSection:Label("Menu keybind", "Left"):Keybind({
+							Name = "Menu keybind",
+							Flag = "Menu Keybind",
+							Default = Enum.KeyCode.RightControl,
+							Mode = "Toggle",
+							Callback = function(Value)
+								Library.MenuKeybind = Library.Flags["Menu Keybind"].Key
+							end
+						})
+
+						SettingsSection:Slider({
+							Name = "Background opacity",
+							Min = 0,
+							Max = 1,
+							Default = 0.3,
+							Decimals = 0.01,
+							Flag = "Background opacity",
+							Callback = function(Value)
+								Window:SetBackgroundTransparency(Value)
+							end
+						})
+
+						SettingsSection:Slider({
+							Name = "Tween time",
+							Min = 0,
+							Max = 5,
+							Default = 0.25,
+							Decimals = 0.01,
+							Flag = "Tween Time",
+							Callback = function(Value)
+								Library.Tween.Time = Value
+							end
+						})
+
+						SettingsSection:Dropdown({
+							Name = "Style",
+							Flag = "TweenStyle",
+							Default = "Cubic",
+							Items = {"Linear", "Sine", "Quad", "Cubic", "Quart", "Quint", "Exponential", "Circular", "Back", "Elastic", "Bounce"},
+							Callback = function(Value)
+								Library.Tween.Style = Enum.EasingStyle[Value]
+							end
+						})
+
+						SettingsSection:Dropdown({
+							Name = "Direction",
+							Flag = "TweenDirection",
+							Default = "Out",
+							Items = {"In", "Out", "InOut"},
+							Callback = function(Value)
+								Library.Tween.Direction = Enum.EasingDirection[Value]
+							end
+						})
+					end
+				end
+
+				do
+					local ThemeSection = SettingsPage:Section({
+						Name = "Theme",
+						Side = 1
+					})
+
+					do
+						for Index, Value in Library.Theme do 
+							Library.ThemeColorpickers[Index] = ThemeSection:Label(Index, "Left"):Colorpicker({Name = Index, Default = Value, Flag = "Theme"..Index, Callback = function(Value) 
+								Library.Theme[Index] = Value
+								Library:ChangeTheme(Index, Value)
+							end})
+						end
+					end
+				end
+			end
+		end
+	end
+end
+
+return Library
