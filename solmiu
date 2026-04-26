@@ -87,6 +87,26 @@ local Library do
 		IsMobile = false
 	end
 
+	-- Mobile scale factor (35% smaller = 0.65 scale)
+	local MobileScale = IsMobile and 0.65 or 1
+	
+	-- Helper function to scale UDim2 for mobile
+	local function ScaleUDim2(udim2)
+		if not IsMobile then return udim2 end
+		return UDim2New(
+			udim2.X.Scale,
+			udim2.X.Offset * MobileScale,
+			udim2.Y.Scale,
+			udim2.Y.Offset * MobileScale
+		)
+	end
+	
+	-- Helper function to scale UDim for mobile
+	local function ScaleUDim(udim)
+		if not IsMobile then return udim end
+		return UDimNew(udim.Scale, udim.Offset * MobileScale)
+	end
+
 	Library = {
 		Theme =  { },
 		Themes = { },
@@ -141,7 +161,13 @@ local Library do
 		NotifHolder = nil,
 		UnusedHolder = nil,
 		Font = nil,
-		KeyList = nil
+		KeyList = nil,
+		
+		-- Mobile properties
+		IsMobile = IsMobile,
+		MobileScale = MobileScale,
+		ScaleUDim2 = ScaleUDim2,
+		ScaleUDim = ScaleUDim
 	}
 
 	Library.__index = Library
@@ -422,15 +448,28 @@ local Library do
 		Instances.__index = Instances
 
 		Instances.Create = function(self, Class, Properties)
+			-- Scale properties for mobile if needed
+			local ScaledProperties = {}
+			if Properties then
+				for Property, Value in pairs(Properties) do
+					ScaledProperties[Property] = Value
+					if IsMobile and (Property == "Size" or Property == "Position") and type(Value) == "userdata" and tostring(Value):match("UDim2") then
+						ScaledProperties[Property] = ScaleUDim2(Value)
+					elseif IsMobile and (Property == "PaddingTop" or Property == "PaddingBottom" or Property == "PaddingLeft" or Property == "PaddingRight") and type(Value) == "userdata" and tostring(Value):match("UDim") then
+						ScaledProperties[Property] = ScaleUDim(Value)
+					end
+				end
+			end
+			
 			local NewItem = {
 				Instance = InstanceNew(Class),
-				Properties = Properties,
+				Properties = ScaledProperties,
 				Class = Class
 			}
 
 			setmetatable(NewItem, Instances)
 
-			for Property, Value in NewItem.Properties do
+			for Property, Value in ScaledProperties do
 				NewItem.Instance[Property] = Value
 			end
 
@@ -446,7 +485,7 @@ local Library do
 			local UIStroke = Instances:Create("UIStroke", {
 				Parent = Item,
 				Color = Library.Theme.Border,
-				Thickness = 1,
+				Thickness = IsMobile and 0.5 or 1,
 				LineJoinMode = Enum.LineJoinMode.Miter
 			})
 
@@ -498,34 +537,34 @@ local Library do
 					TextTransparency = 1,
 					AutomaticSize = Enum.AutomaticSize.XY,
 					TextXAlignment = Enum.TextXAlignment.Left,
-					TextSize = 14,
+					TextSize = IsMobile and 12 or 14,
 					BackgroundColor3 = FromRGB(15, 12, 16)
 				})  Items["Text"]:AddToTheme({TextColor3 = "Text"})
 
 				Instances:Create("UIPadding", {
 					Parent = Items["Text"].Instance,
 					Name = "\0",
-					PaddingBottom = UDimNew(0, 8),
-					PaddingLeft = UDimNew(0, 8),
-					PaddingRight = UDimNew(0, 8),
-					PaddingTop = UDimNew(0, 8),
+					PaddingBottom = UDimNew(0, IsMobile and 6 or 8),
+					PaddingLeft = UDimNew(0, IsMobile and 6 or 8),
+					PaddingRight = UDimNew(0, IsMobile and 6 or 8),
+					PaddingTop = UDimNew(0, IsMobile and 6 or 8),
 				})
 
 				Instances:Create("UICorner", {
 					Parent = Items["Tooltip"].Instance,
 					Name = "\0",
-					CornerRadius = UDimNew(0, 5)
+					CornerRadius = UDimNew(0, IsMobile and 4 or 5)
 				})
 			end
 
 			Library:Connect(Gui.MouseEnter, function()
-				Items["Tooltip"].Instance.Position = UDim2New(0, MouseLocation.X, 0, MouseLocation.Y - 42)
+				Items["Tooltip"].Instance.Position = UDim2New(0, MouseLocation.X, 0, MouseLocation.Y - (IsMobile and 35 or 42))
 				Items["Tooltip"]:Tween(nil, {BackgroundTransparency = 0})
 				Items["Text"]:Tween(nil, {TextTransparency = 0})
 
 				RenderStepped = RunService.RenderStepped:Connect(function()
 					MouseLocation = UserInputService:GetMouseLocation()
-					Items["Tooltip"]:Tween(nil, {Position = UDim2New(0, MouseLocation.X, 0, MouseLocation.Y - 42)})
+					Items["Tooltip"]:Tween(nil, {Position = UDim2New(0, MouseLocation.X, 0, MouseLocation.Y - (IsMobile and 35 or 42))})
 				end)
 			end)
 
@@ -691,8 +730,8 @@ local Library do
 				Image = "rbxassetid://7368471234",
 				AnchorPoint = Vector2New(1, 1),
 				BorderColor3 = FromRGB(0, 0, 0),
-				Size = UDim2New(0, 6, 0, 6),
-				Position = UDim2New(1, -4, 1, -4),
+				Size = UDim2New(0, IsMobile and 4 or 6, 0, IsMobile and 4 or 6),
+				Position = UDim2New(1, IsMobile and -3 or -4, 1, IsMobile and -3 or -4),
 				Name = "\0",
 				BorderSizePixel = 0,
 				BackgroundTransparency = 1,
@@ -819,17 +858,17 @@ local Library do
 	Instances:Create("UIListLayout", {
 		Parent = Library.NotifHolder.Instance,
 		Name = "\0",
-		Padding = UDimNew(0, 12),
+		Padding = UDimNew(0, IsMobile and 6 or 12),
 		SortOrder = Enum.SortOrder.LayoutOrder
 	})
 
 	Instances:Create("UIPadding", {
 		Parent = Library.NotifHolder.Instance,
 		Name = "\0",
-		PaddingTop = UDimNew(0, 12),
-		PaddingBottom = UDimNew(0, 12),
-		PaddingRight = UDimNew(0, 12),
-		PaddingLeft = UDimNew(0, 12)
+		PaddingTop = UDimNew(0, IsMobile and 6 or 12),
+		PaddingBottom = UDimNew(0, IsMobile and 6 or 12),
+		PaddingRight = UDimNew(0, IsMobile and 6 or 12),
+		PaddingLeft = UDimNew(0, IsMobile and 6 or 12)
 	})
 
 	Library.Unload = function(self)
@@ -1193,9 +1232,9 @@ local Library do
 					AutoButtonColor = false,
 					BackgroundTransparency = 1,
 					BorderSizePixel = 0,
-					Size = UDim2New(1, 0, 0, 20),
+					Size = UDim2New(1, 0, 0, IsMobile and 25 or 20),
 					ZIndex = 2,
-					TextSize = 14,
+					TextSize = IsMobile and 16 or 14,
 					BackgroundColor3 = FromRGB(255, 255, 255)
 				})
 
@@ -1207,14 +1246,14 @@ local Library do
 					TextTransparency = 0.4000000059604645,
 					Text = Data.Name,
 					AutomaticSize = Enum.AutomaticSize.X,
-					Size = UDim2New(0, 0, 0, 15),
+					Size = UDim2New(0, 0, 0, IsMobile and 18 or 15),
 					AnchorPoint = Vector2New(0, 0.5),
 					BorderSizePixel = 0,
 					BackgroundTransparency = 1,
 					Position = UDim2New(0, 0, 0.5, 0),
 					BorderColor3 = FromRGB(0, 0, 0),
 					ZIndex = 2,
-					TextSize = 14,
+					TextSize = IsMobile and 16 or 14,
 					BackgroundColor3 = FromRGB(255, 255, 255)
 				})  Items["Text"]:AddToTheme({TextColor3 = "Text"})
 
@@ -1224,7 +1263,7 @@ local Library do
 					BorderColor3 = FromRGB(0, 0, 0),
 					AnchorPoint = Vector2New(1, 0),
 					Position = UDim2New(1, 0, 0, 0),
-					Size = UDim2New(0, 40, 0, 20),
+					Size = UDim2New(0, IsMobile and 50 or 40, 0, IsMobile and 25 or 20),
 					ZIndex = 2,
 					BorderSizePixel = 0,
 					BackgroundColor3 = FromRGB(36, 32, 39)
@@ -1250,8 +1289,8 @@ local Library do
 					Name = "\0",
 					BorderColor3 = FromRGB(0, 0, 0),
 					BackgroundTransparency = 0.4000000059604645,
-					Position = UDim2New(0, 3, 0, 3),
-					Size = UDim2New(0, 14, 0, 14),
+					Position = UDim2New(0, IsMobile and 4 or 3, 0, IsMobile and 4 or 3),
+					Size = UDim2New(0, IsMobile and 17 or 14, 0, IsMobile and 17 or 14),
 					ZIndex = 2,
 					BorderSizePixel = 0,
 					BackgroundColor3 = FromRGB(255, 255, 255)
@@ -1270,13 +1309,13 @@ local Library do
 					AnchorPoint = Vector2New(1, 0),
 					Size = UDim2New(0, 0, 1, 0),
 					AutomaticSize = Enum.AutomaticSize.X,
-					Position = UDim2New(1, -46, 0, 0)
+					Position = UDim2New(1, -(IsMobile and 56 or 46), 0, 0)
 				})
 
 				Instances:Create("UIListLayout", {
 					Parent = Items["SubElementsHolder"].Instance,
 					Name = "\0",
-					Padding = UDimNew(0, 5),
+					Padding = UDimNew(0, IsMobile and 8 or 5),
 					SortOrder = Enum.SortOrder.LayoutOrder,
 					FillDirection = Enum.FillDirection.Horizontal
 				})
@@ -1294,13 +1333,13 @@ local Library do
 					Items["Indicator"]:ChangeItemTheme({BackgroundColor3 = "Accent"})
 
 					Items["Indicator"]:Tween(nil, {BackgroundColor3 = Library.Theme.Accent})
-					Items["Circle"]:Tween(nil, {BackgroundTransparency = 0, Position = UDim2New(1, -3, 0, 3), AnchorPoint = Vector2New(1, 0)})
+					Items["Circle"]:Tween(nil, {BackgroundTransparency = 0, Position = UDim2New(1, IsMobile and -4 or -3, 0, IsMobile and 4 or 3), AnchorPoint = Vector2New(1, 0)})
 					Items["Text"]:Tween(nil, {TextTransparency = 0})
 				else
 					Items["Indicator"]:ChangeItemTheme({BackgroundColor3 = "Element"})
 
 					Items["Indicator"]:Tween(nil, {BackgroundColor3 = Library.Theme.Element})
-					Items["Circle"]:Tween(nil, {BackgroundTransparency = 0.4, Position = UDim2New(0, 3, 0, 3), AnchorPoint = Vector2New(0, 0)})
+					Items["Circle"]:Tween(nil, {BackgroundTransparency = 0.4, Position = UDim2New(0, IsMobile and 4 or 3, 0, IsMobile and 4 or 3), AnchorPoint = Vector2New(0, 0)})
 					Items["Text"]:Tween(nil, {TextTransparency = 0.4})
 				end
 
@@ -1394,9 +1433,9 @@ local Library do
 					AutoButtonColor = false,
 					BackgroundTransparency = 1,
 					BorderSizePixel = 0,
-					Size = UDim2New(1, 0, 0, 20),
+					Size = UDim2New(1, 0, 0, IsMobile and 25 or 20),
 					ZIndex = 2,
-					TextSize = 14,
+					TextSize = IsMobile and 16 or 14,
 					BackgroundColor3 = FromRGB(255, 255, 255)
 				})
 
@@ -1408,14 +1447,14 @@ local Library do
 					TextTransparency = 0.4000000059604645,
 					Text = Data.Name,
 					AutomaticSize = Enum.AutomaticSize.X,
-					Size = UDim2New(0, 0, 0, 15),
+					Size = UDim2New(0, 0, 0, IsMobile and 18 or 15),
 					AnchorPoint = Vector2New(0, 0.5),
 					BorderSizePixel = 0,
 					BackgroundTransparency = 1,
 					Position = UDim2New(0, 0, 0.5, 0),
 					BorderColor3 = FromRGB(0, 0, 0),
 					ZIndex = 2,
-					TextSize = 14,
+					TextSize = IsMobile and 16 or 14,
 					BackgroundColor3 = FromRGB(255, 255, 255)
 				})  Items["Text"]:AddToTheme({TextColor3 = "Text"})
 
@@ -1425,7 +1464,7 @@ local Library do
 					BorderColor3 = FromRGB(0, 0, 0),
 					AnchorPoint = Vector2New(1, 0),
 					Position = UDim2New(1, 0, 0, 0),
-					Size = UDim2New(0, 20, 0, 20),
+					Size = UDim2New(0, IsMobile and 25 or 20, 0, IsMobile and 25 or 20),
 					ZIndex = 2,
 					BorderSizePixel = 0,
 					BackgroundColor3 = FromRGB(36, 32, 39)
@@ -1434,7 +1473,7 @@ local Library do
 				Instances:Create("UICorner", {
 					Parent = Items["Indicator"].Instance,
 					Name = "\0",
-					CornerRadius = UDimNew(0, 5)
+					CornerRadius = UDimNew(0, IsMobile and 6 or 5)
 				})
 
 				Instances:Create("UIGradient", {
@@ -1470,13 +1509,13 @@ local Library do
 					AnchorPoint = Vector2New(1, 0),
 					Size = UDim2New(0, 0, 1, 0),
 					AutomaticSize = Enum.AutomaticSize.X,
-					Position = UDim2New(1, -24, 0, 0)
+					Position = UDim2New(1, -(IsMobile and 30 or 24), 0, 0)
 				})
 
 				Instances:Create("UIListLayout", {
 					Parent = Items["SubElementsHolder"].Instance,
 					Name = "\0",
-					Padding = UDimNew(0, 5),
+					Padding = UDimNew(0, IsMobile and 8 or 5),
 					SortOrder = Enum.SortOrder.LayoutOrder,
 					FillDirection = Enum.FillDirection.Horizontal
 				})
@@ -1581,7 +1620,7 @@ local Library do
 					Parent = Data.Parent.Instance,
 					Name = "\0",
 					BackgroundTransparency = 1,
-					Size = UDim2New(1, 0, 0, 25),
+					Size = UDim2New(1, 0, 0, IsMobile and 35 or 25),
 					BorderColor3 = FromRGB(0, 0, 0),
 					ZIndex = 2,
 					BorderSizePixel = 0,
@@ -1593,7 +1632,7 @@ local Library do
 					Name = "\0",
 					FillDirection = Enum.FillDirection.Horizontal,
 					HorizontalFlex = Enum.UIFlexAlignment.Fill,
-					Padding = UDimNew(0, 8),
+					Padding = UDimNew(0, IsMobile and 10 or 8),
 					SortOrder = Enum.SortOrder.LayoutOrder,
 					VerticalFlex = Enum.UIFlexAlignment.Fill
 				})
@@ -1615,16 +1654,16 @@ local Library do
 						Text = "",
 						AutoButtonColor = false,
 						BorderSizePixel = 0,
-						Size = UDim2New(0, 200, 0, 50),
+						Size = UDim2New(0, IsMobile and 150 or 200, 0, IsMobile and 60 or 50),
 						ZIndex = 2,
-						TextSize = 14,
+						TextSize = IsMobile and 16 or 14,
 						BackgroundColor3 = FromRGB(36, 32, 39)
 					})  SubItems["NewButton"]:AddToTheme({BackgroundColor3 = "Element"})
 
 					Instances:Create("UICorner", {
 						Parent = SubItems["NewButton"].Instance,
 						Name = "\0",
-						CornerRadius = UDimNew(0, 5)
+						CornerRadius = UDimNew(0, IsMobile and 6 or 5)
 					})
 
 					Instances:Create("UIGradient", {
@@ -1647,7 +1686,7 @@ local Library do
 						BorderSizePixel = 0,
 						Size = UDim2New(1, 0, 1, 0),
 						ZIndex = 2,
-						TextSize = 14,
+						TextSize = IsMobile and 16 or 14,
 						BackgroundColor3 = FromRGB(255, 255, 255)
 					})  SubItems["Text"]:AddToTheme({TextColor3 = "Text"})
 				end
@@ -1739,7 +1778,7 @@ local Library do
 					Parent = Data.Parent.Instance,
 					Name = "\0",
 					BackgroundTransparency = 1,
-					Size = UDim2New(1, 0, 0, 35),
+					Size = UDim2New(1, 0, 0, IsMobile and 45 or 35),
 					BorderColor3 = FromRGB(0, 0, 0),
 					ZIndex = 2,
 					BorderSizePixel = 0,
@@ -1755,10 +1794,10 @@ local Library do
 					Text = Data.Name,
 					AutomaticSize = Enum.AutomaticSize.X,
 					BackgroundTransparency = 1,
-					Size = UDim2New(0, 0, 0, 15),
+					Size = UDim2New(0, 0, 0, IsMobile and 18 or 15),
 					BorderSizePixel = 0,
 					ZIndex = 2,
-					TextSize = 14,
+					TextSize = IsMobile and 16 or 14,
 					BackgroundColor3 = FromRGB(255, 255, 255)
 				})  Items["Text"]:AddToTheme({TextColor3 = "Text"})
 
@@ -1770,7 +1809,7 @@ local Library do
 					BorderColor3 = FromRGB(0, 0, 0),
 					AnchorPoint = Vector2New(0, 1),
 					Position = UDim2New(0, 0, 1, 0),
-					Size = UDim2New(1, 0, 0, 15),
+					Size = UDim2New(1, 0, 0, IsMobile and 20 or 15),
 					ZIndex = 2,
 					BorderSizePixel = 0,
 					BackgroundColor3 = FromRGB(36, 32, 39)
@@ -1810,7 +1849,7 @@ local Library do
 				Instances:Create("UICorner", {
 					Parent = Items["Accent"].Instance,
 					Name = "\0",
-					CornerRadius = UDimNew(1, 0)
+						CornerRadius = UDimNew(1,0)
 				})
 
 				Items["Drag"] = Instances:Create("Frame", {
@@ -1819,7 +1858,7 @@ local Library do
 					BorderColor3 = FromRGB(0, 0, 0),
 					AnchorPoint = Vector2New(1, 0.5),
 					Position = UDim2New(1, 0, 0.5, 0),
-					Size = UDim2New(0, 7, 1, 0),
+					Size = UDim2New(0, IsMobile and 9 or 7, 1, 0),
 					ZIndex = 2,
 					BorderSizePixel = 0,
 					BackgroundColor3 = FromRGB(255, 255, 255)
@@ -1840,12 +1879,12 @@ local Library do
 					Text = "50s",
 					AutomaticSize = Enum.AutomaticSize.X,
 					AnchorPoint = Vector2New(1, 0),
-					Size = UDim2New(0, 0, 0, 15),
+					Size = UDim2New(0, 0, 0, IsMobile and 18 or 15),
 					BackgroundTransparency = 1,
 					Position = UDim2New(1, 0, 0, 0),
 					BorderSizePixel = 0,
 					ZIndex = 2,
-					TextSize = 14,
+					TextSize = IsMobile and 16 or 14,
 					BackgroundColor3 = FromRGB(255, 255, 255)
 				})  Items["Value"]:AddToTheme({TextColor3 = "Text"})
 			end
@@ -1988,7 +2027,7 @@ local Library do
 					Parent = Data.Parent.Instance,
 					Name = "\0",
 					BackgroundTransparency = 1,
-					Size = UDim2New(1, 0, 0, 25),
+					Size = UDim2New(1, 0, 0, IsMobile and 35 or 25),
 					BorderColor3 = FromRGB(0, 0, 0),
 					ZIndex = 2,
 					BorderSizePixel = 0,
@@ -2004,12 +2043,12 @@ local Library do
 					Text = Data.Name,
 					AutomaticSize = Enum.AutomaticSize.X,
 					AnchorPoint = Vector2New(0, 0.5),
-					Size = UDim2New(0, 0, 0, 15),
+					Size = UDim2New(0, 0, 0, IsMobile and 18 or 15),
 					BackgroundTransparency = 1,
 					Position = UDim2New(0, 0, 0.5, 0),
 					BorderSizePixel = 0,
 					ZIndex = 2,
-					TextSize = 14,
+					TextSize = IsMobile and 16 or 14,
 					BackgroundColor3 = FromRGB(255, 255, 255)
 				})  Items["Text"]:AddToTheme({TextColor3 = "Text"})
 
@@ -2021,7 +2060,7 @@ local Library do
 					BorderColor3 = FromRGB(0, 0, 0),
 					AnchorPoint = Vector2New(1, 0),
 					Position = UDim2New(1, 0, 0, 0),
-					Size = UDim2New(0, not IsMobile and 135 or 75, 0, 25),
+					Size = UDim2New(0, IsMobile and 100 or 135, 0, IsMobile and 35 or 25),
 					ZIndex = 2,
 					BorderSizePixel = 0,
 					BackgroundColor3 = FromRGB(36, 32, 39)
@@ -2030,7 +2069,7 @@ local Library do
 				Instances:Create("UICorner", {
 					Parent = Items["RealDropdown"].Instance,
 					Name = "\0",
-					CornerRadius = UDimNew(0, 5)
+					CornerRadius = UDimNew(0, IsMobile and 6 or 5)
 				})
 
 				Instances:Create("UIGradient", {
@@ -2050,14 +2089,14 @@ local Library do
 					BorderColor3 = FromRGB(0, 0, 0),
 					Text = "--",
 					TextTruncate = Enum.TextTruncate.AtEnd,
-					Size = UDim2New(1, -25, 0, 15),
+					Size = UDim2New(1, -25, 0, IsMobile and 18 or 15),
 					AnchorPoint = Vector2New(0, 0.5),
-					Position = UDim2New(0, 8, 0.5, 0),
+					Position = UDim2New(0, IsMobile and 10 or 8, 0.5, 0),
 					BackgroundTransparency = 1,
 					TextXAlignment = Enum.TextXAlignment.Left,
 					BorderSizePixel = 0,
 					ZIndex = 2,
-					TextSize = 14,
+					TextSize = IsMobile and 16 or 14,
 					BackgroundColor3 = FromRGB(255, 255, 255)
 				})  Items["Value"]:AddToTheme({TextColor3 = "Text"})
 
@@ -2090,33 +2129,33 @@ local Library do
 					ScrollBarImageColor3 = FromRGB(232, 186, 248),
 					MidImage = "rbxassetid://128693616966482",
 					BorderColor3 = FromRGB(0, 0, 0),
-					ScrollBarThickness = 1,
+					ScrollBarThickness = IsMobile and 2 or 1,
 					TopImage = "rbxassetid://128693616966482",
-					Size = UDim2New(0, 135, 0, 125),
+					Size = UDim2New(0, IsMobile and 100 or 135, 0, IsMobile and 100 or 125),
 					BottomImage = "rbxassetid://128693616966482",
-					Position = UDim2New(0, Items["RealDropdown"].Instance.AbsolutePosition.X, 0, Items["RealDropdown"].Instance.AbsolutePosition.Y + 30),
+					Position = UDim2New(0, Items["RealDropdown"].Instance.AbsolutePosition.X, 0, Items["RealDropdown"].Instance.AbsolutePosition.Y + (IsMobile and 40 or 30)),
 					BackgroundColor3 = FromRGB(15, 12, 16)
 				})  Items["OptionHolder"]:AddToTheme({ScrollBarImageColor3 = "Accent", BackgroundColor3 = "Background"})
 
 				Instances:Create("UICorner", {
 					Parent = Items["OptionHolder"].Instance,
 					Name = "\0",
-					CornerRadius = UDimNew(0, 5)
+					CornerRadius = UDimNew(0, IsMobile and 6 or 5)
 				})
 
 				Instances:Create("UIPadding", {
 					Parent = Items["OptionHolder"].Instance,
 					Name = "\0",
-					PaddingTop = UDimNew(0, 5),
-					PaddingBottom = UDimNew(0, 8),
-					PaddingRight = UDimNew(0, 5),
-					PaddingLeft = UDimNew(0, 5)
+					PaddingTop = UDimNew(0, IsMobile and 6 or 5),
+					PaddingBottom = UDimNew(0, IsMobile and 10 or 8),
+					PaddingRight = UDimNew(0, IsMobile and 6 or 5),
+					PaddingLeft = UDimNew(0, IsMobile and 6 or 5)
 				})
 
 				Instances:Create("UIListLayout", {
 					Parent = Items["OptionHolder"].Instance,
 					Name = "\0",
-					Padding = UDimNew(0, 5),
+					Padding = UDimNew(0, IsMobile and 6 or 5),
 					SortOrder = Enum.SortOrder.LayoutOrder
 				})
 			end
@@ -2189,9 +2228,9 @@ local Library do
 					Text = "",
 					BackgroundTransparency = 1,
 					BorderSizePixel = 0,
-					Size = UDim2New(1, 0, 0, 25),
+					Size = UDim2New(1, 0, 0, IsMobile and 30 or 25),
 					ZIndex = 2,
-					TextSize = 14,
+					TextSize = IsMobile and 16 or 14,
 					BackgroundColor3 = FromRGB(22, 20, 24)
 				})  OptionButton:AddToTheme({BackgroundColor3 = "Inline"})
 
@@ -2202,7 +2241,7 @@ local Library do
 				Instances:Create("UICorner", {
 					Parent = OptionButton.Instance,
 					Name = "\0",
-					CornerRadius = UDimNew(0, 5)
+					CornerRadius = UDimNew(0, IsMobile and 6 or 5)
 				})
 
 				local OptionText = Instances:Create("TextLabel", {
@@ -2214,12 +2253,12 @@ local Library do
 					Text = Option,
 					BorderColor3 = FromRGB(0, 0, 0),
 					Size = UDim2New(1, -15, 1, 0),
-					Position = UDim2New(0, Icon and 32 or 4, 0, 0),
+					Position = UDim2New(0, Icon and IsMobile and 28 or 32, 0, 0),
 					BackgroundTransparency = 1,
 					TextXAlignment = Enum.TextXAlignment.Left,
 					BorderSizePixel = 0,
 					ZIndex = 2,
-					TextSize = 14,
+					TextSize = IsMobile and 16 or 14,
 					BackgroundColor3 = FromRGB(255, 255, 255)
 				})  OptionText:AddToTheme({TextColor3 = "Text"})
 
@@ -2228,11 +2267,11 @@ local Library do
 						Parent = OptionButton.Instance,
 						Name = "\0",
 						BorderColor3 = FromRGB(0, 0, 0),
-						Size = UDim2New(0, 16, 0, 16),
+						Size = UDim2New(0, IsMobile and 20 or 16, 0, IsMobile and 20 or 16),
 						AnchorPoint = Vector2New(0, 0.5),
 						Image = "rbxassetid://"..Icon,
 						BackgroundTransparency = 1,
-						Position = UDim2New(0, 8, 0.5, 0),
+						Position = UDim2New(0, IsMobile and 10 or 8, 0.5, 0),
 						ZIndex = 2,
 						BorderSizePixel = 0,
 						BackgroundColor3 = FromRGB(255, 255, 255)
@@ -2249,10 +2288,10 @@ local Library do
 				function OptionData:Toggle(State)
 					if State == "Active" then
 						OptionData.Button:Tween(nil, {BackgroundTransparency = 0})
-						OptionData.Text:Tween(nil, {TextTransparency = 0, Position = UDim2New(0, not Icon and 8 or 32, 0, 0)})
+						OptionData.Text:Tween(nil, {TextTransparency = 0, Position = UDim2New(0, not Icon and IsMobile and 10 or 8, 0, 0)})
 					else
 						OptionData.Button:Tween(nil, {BackgroundTransparency = 1})
-						OptionData.Text:Tween(nil, {TextTransparency = 0.4, Position = UDim2New(0, not Icon and 4 or 32, 0, 0)})
+						OptionData.Text:Tween(nil, {TextTransparency = 0.4, Position = UDim2New(0, not Icon and IsMobile and 10 or 8, 0, 0)})
 					end
 				end
 
@@ -2396,7 +2435,7 @@ local Library do
 					RenderStepped = RunService.RenderStepped:Connect(function()
 
 						if holder and holder.Parent and btn then
-							holder.Position = UDim2New(0, btn.AbsolutePosition.X, 0, btn.AbsolutePosition.Y + 30)
+							holder.Position = UDim2New(0, btn.AbsolutePosition.X, 0, btn.AbsolutePosition.Y + (IsMobile and 40 or 30))
 						end
 					end)
 
@@ -2525,7 +2564,7 @@ local Library do
 					Parent = Data.Parent.Instance,
 					Name = "\0",
 					BackgroundTransparency = 1,
-					Size = UDim2New(1, 0, 0, 25),
+					Size = UDim2New(1, 0, 0, IsMobile and 35 or 25),
 					BorderColor3 = FromRGB(0, 0, 0),
 					ZIndex = 2,
 					BorderSizePixel = 0,
@@ -2541,12 +2580,12 @@ local Library do
 					Text = Data.Name,
 					AutomaticSize = Enum.AutomaticSize.X,
 					AnchorPoint = Vector2New(0, 0.5),
-					Size = UDim2New(0, 0, 0, 15),
+					Size = UDim2New(0, 0, 0, IsMobile and 18 or 15),
 					BackgroundTransparency = 1,
 					Position = UDim2New(0, 0, 0.5, 0),
 					BorderSizePixel = 0,
 					ZIndex = 2,
-					TextSize = 14,
+					TextSize = IsMobile and 16 or 14,
 					BackgroundColor3 = FromRGB(255, 255, 255)
 				})  Items["Text"]:AddToTheme({TextColor3 = "Text"})
 
@@ -2558,7 +2597,7 @@ local Library do
 					BorderColor3 = FromRGB(0, 0, 0),
 					AnchorPoint = Vector2New(1, 0),
 					Position = UDim2New(1, 0, 0, 0),
-					Size = UDim2New(0, not IsMobile and 135 or 75, 0, 25),
+					Size = UDim2New(0, IsMobile and 100 or 135, 0, IsMobile and 35 or 25),
 					ZIndex = 2,
 					BorderSizePixel = 0,
 					BackgroundColor3 = FromRGB(36, 32, 39)
@@ -2567,7 +2606,7 @@ local Library do
 				Instances:Create("UICorner", {
 					Parent = Items["RealDropdown"].Instance,
 					Name = "\0",
-					CornerRadius = UDimNew(0, 5)
+					CornerRadius = UDimNew(0, IsMobile and 6 or 5)
 				})
 
 				Instances:Create("UIGradient", {
@@ -2587,14 +2626,14 @@ local Library do
 					BorderColor3 = FromRGB(0, 0, 0),
 					Text = "--",
 					TextTruncate = Enum.TextTruncate.AtEnd,
-					Size = UDim2New(1, -25, 0, 15),
+					Size = UDim2New(1, -25, 0, IsMobile and 18 or 15),
 					AnchorPoint = Vector2New(0, 0.5),
-					Position = UDim2New(0, 8, 0.5, 0),
+					Position = UDim2New(0, IsMobile and 10 or 8, 0.5, 0),
 					BackgroundTransparency = 1,
 					TextXAlignment = Enum.TextXAlignment.Left,
 					BorderSizePixel = 0,
 					ZIndex = 2,
-					TextSize = 14,
+					TextSize = IsMobile and 16 or 14,
 					BackgroundColor3 = FromRGB(255, 255, 255)
 				})  Items["Value"]:AddToTheme({TextColor3 = "Text"})
 
@@ -2627,27 +2666,27 @@ local Library do
 					ScrollBarImageColor3 = FromRGB(232, 186, 248),
 					MidImage = "rbxassetid://128693616966482",
 					BorderColor3 = FromRGB(0, 0, 0),
-					ScrollBarThickness = 1,
+					ScrollBarThickness = IsMobile and 2 or 1,
 					TopImage = "rbxassetid://128693616966482",
-					Size = UDim2New(0, 135, 0, 125),
+					Size = UDim2New(0, IsMobile and 100 or 135, 0, IsMobile and 100 or 125),
 					BottomImage = "rbxassetid://128693616966482",
-					Position = UDim2New(0, Items["RealDropdown"].Instance.AbsolutePosition.X, 0, Items["RealDropdown"].Instance.AbsolutePosition.Y + 30),
+					Position = UDim2New(0, Items["RealDropdown"].Instance.AbsolutePosition.X, 0, Items["RealDropdown"].Instance.AbsolutePosition.Y + (IsMobile and 40 or 30)),
 					BackgroundColor3 = FromRGB(15, 12, 16)
 				})  Items["OptionHolder"]:AddToTheme({ScrollBarImageColor3 = "Accent", BackgroundColor3 = "Background"})
 
 				Instances:Create("UICorner", {
 					Parent = Items["OptionHolder"].Instance,
 					Name = "\0",
-					CornerRadius = UDimNew(0, 5)
+					CornerRadius = UDimNew(0, IsMobile and 6 or 5)
 				})
 
 				Instances:Create("UIPadding", {
 					Parent = Items["OptionHolder"].Instance,
 					Name = "\0",
-					PaddingTop = UDimNew(0, 5),
-					PaddingBottom = UDimNew(0, 8),
-					PaddingRight = UDimNew(0, 5),
-					PaddingLeft = UDimNew(0, 5)
+					PaddingTop = UDimNew(0, IsMobile and 6 or 5),
+					PaddingBottom = UDimNew(0, IsMobile and 10 or 8),
+					PaddingRight = UDimNew(0, IsMobile and 6 or 5),
+					PaddingLeft = UDimNew(0, IsMobile and 6 or 5)
 				})
 
 				Instances:Create("UIListLayout", {
@@ -2727,16 +2766,16 @@ local Library do
 					AutoButtonColor = false,
 					BackgroundTransparency = 1,
 					BorderSizePixel = 0,
-					Size = UDim2New(1, 0, 0, 25),
+					Size = UDim2New(1, 0, 0, IsMobile and 30 or 25),
 					ZIndex = 2,
-					TextSize = 14,
+					TextSize = IsMobile and 16 or 14,
 					BackgroundColor3 = FromRGB(22, 20, 24)
 				})  OptionButton:AddToTheme({BackgroundColor3 = "Inline"})
 
 				Instances:Create("UICorner", {
 					Parent = OptionButton.Instance,
 					Name = "\0",
-					CornerRadius = UDimNew(0, 5)
+					CornerRadius = UDimNew(0, IsMobile and 6 or 5)
 				})
 
 				local OptionText = Instances:Create("TextLabel", {
@@ -2748,12 +2787,12 @@ local Library do
 					Text = Option,
 					BorderColor3 = FromRGB(0, 0, 0),
 					Size = UDim2New(1, -15, 1, 0),
-					Position = UDim2New(0, not Icon and 4 or 32, 0, 0),
+					Position = UDim2New(0, not Icon and IsMobile and 10 or 8, 0, 0),
 					BackgroundTransparency = 1,
 					TextXAlignment = Enum.TextXAlignment.Left,
 					BorderSizePixel = 0,
 					ZIndex = 2,
-					TextSize = 14,
+					TextSize = IsMobile and 16 or 14,
 					BackgroundColor3 = FromRGB(255, 255, 255)
 				})  OptionText:AddToTheme({TextColor3 = "Text"})
 
@@ -2763,7 +2802,7 @@ local Library do
 					BorderColor3 = FromRGB(0, 0, 0),
 					AnchorPoint = Vector2New(1, 0.5),
 					Position = UDim2New(1, 0, 0.5, 0),
-					Size = UDim2New(0, 18, 0, 18),
+					Size = UDim2New(0, IsMobile and 22 or 18, 0, IsMobile and 22 or 18),
 					ZIndex = 2,
 					BorderSizePixel = 0,
 					BackgroundColor3 = FromRGB(36, 32, 39)
@@ -2772,7 +2811,7 @@ local Library do
 				Instances:Create("UICorner", {
 					Parent = OptionIndicator.Instance,
 					Name = "\0",
-					CornerRadius = UDimNew(0, 5)
+					CornerRadius = UDimNew(0, IsMobile and 6 or 5)
 				})
 
 				Instances:Create("UIGradient", {
@@ -2806,11 +2845,11 @@ local Library do
 						Parent = OptionButton.Instance,
 						Name = "\0",
 						BorderColor3 = FromRGB(0, 0, 0),
-						Size = UDim2New(0, 16, 0, 16),
+						Size = UDim2New(0, IsMobile and 20 or 16, 0, IsMobile and 20 or 16),
 						AnchorPoint = Vector2New(0, 0.5),
 						Image = "rbxassetid://"..Icon,
 						BackgroundTransparency = 1,
-						Position = UDim2New(0, 8, 0.5, 0),
+						Position = UDim2New(0, IsMobile and 10 or 8, 0.5, 0),
 						ZIndex = 2,
 						BorderSizePixel = 0,
 						BackgroundColor3 = FromRGB(255, 255, 255)
@@ -2971,7 +3010,7 @@ local Library do
 					Items["Icon"]:Tween(nil, {Rotation = -90})
 
 					RenderStepped = RunService.RenderStepped:Connect(function()
-						Items["OptionHolder"].Instance.Position = UDim2New(0, Items["RealDropdown"].Instance.AbsolutePosition.X, 0, Items["RealDropdown"].Instance.AbsolutePosition.Y + 30)
+						Items["OptionHolder"].Instance.Position = UDim2New(0, Items["RealDropdown"].Instance.AbsolutePosition.X, 0, Items["RealDropdown"].Instance.AbsolutePosition.Y + (IsMobile and 40 or 30))
 					end)
 
 					for Index, Value in Library.OpenFrames do 
@@ -3120,9 +3159,9 @@ local Library do
 					AnchorPoint = Vector2New(1, 0),
 					BorderSizePixel = 0,
 					Position = UDim2New(1, 0, 0, 0),
-					Size = UDim2New(0, 20, 0, 20),
+					Size = UDim2New(0, IsMobile and 25 or 20, 0, IsMobile and 25 or 20),
 					ZIndex = 2,
-					TextSize = 14,
+					TextSize = IsMobile and 16 or 14,
 					BackgroundColor3 = FromRGB(255, 215, 160)
 				})
 
@@ -3138,39 +3177,39 @@ local Library do
 				Instances:Create("UICorner", {
 					Parent = Items["ColorpickerButton"].Instance,
 					Name = "\0",
-					CornerRadius = UDimNew(0, 5)
+					CornerRadius = UDimNew(0, IsMobile and 6 or 5)
 				})
 
 				Items["ColorpickerWindow"] = Instances:Create("Frame", {
 					Parent = Library.Holder.Instance,
 					Name = "\0",
 					BackgroundTransparency = 0.30000001192092896,
-					Position = UDim2New(0, Items["ColorpickerButton"].Instance.AbsolutePosition.X + 50, 0, Items["ColorpickerButton"].Instance.AbsolutePosition.Y + 26),
+					Position = UDim2New(0, Items["ColorpickerButton"].Instance.AbsolutePosition.X + (IsMobile and 40 or 50), 0, Items["ColorpickerButton"].Instance.AbsolutePosition.Y + (IsMobile and 35 or 26)),
 					BorderColor3 = FromRGB(0, 0, 0),
-					Size = UDim2New(0, 218, 0, 275),
+					Size = UDim2New(0, IsMobile and 180 or 218, 0, IsMobile and 225 or 275),
 					Visible = false,
 					BorderSizePixel = 0,
 					BackgroundColor3 = FromRGB(15, 12, 16)
 				})  Items["ColorpickerWindow"]:AddToTheme({BackgroundColor3 = "Background"})
 
 				Items["ColorpickerWindow"]:MakeDraggable()
-				Items["ColorpickerWindow"]:MakeResizeable(Vector2New(200, 200), Vector2New(9999, 9999))
+				Items["ColorpickerWindow"]:MakeResizeable(Vector2New(IsMobile and 150 or 200, IsMobile and 150 or 200), Vector2New(9999, 9999))
 
 				Instances:Create("UICorner", {
 					Parent = Items["ColorpickerWindow"].Instance,
 					Name = "\0",
-					CornerRadius = UDimNew(0, 5)
+					CornerRadius = UDimNew(0, IsMobile and 6 or 5)
 				})
 
 				Items["Hue"] = Instances:Create("ImageButton", {
 					Parent = Items["ColorpickerWindow"].Instance,
 					Name = "\0",
 					BorderColor3 = FromRGB(0, 0, 0),
-					Size = UDim2New(1, -16, 0, 18),
+					Size = UDim2New(1, -16, 0, IsMobile and 15 or 18),
 					AutoButtonColor = false,
 					AnchorPoint = Vector2New(0, 1),
 					Image = Library:GetImage("Hue"),
-					Position = UDim2New(0, 8, 1, -75),
+					Position = UDim2New(0, 8, 1, -(IsMobile and 60 or 75)),
 					ZIndex = 2,
 					BorderSizePixel = 0,
 					BackgroundColor3 = FromRGB(255, 255, 255)
@@ -3218,9 +3257,9 @@ local Library do
 					AnchorPoint = Vector2New(1, 0),
 					BorderSizePixel = 0,
 					Position = UDim2New(1, -8, 0, 8),
-					Size = UDim2New(0, 18, 1, -110),
+					Size = UDim2New(0, IsMobile and 15 or 18, 1, -(IsMobile and 85 or 110)),
 					ZIndex = 2,
-					TextSize = 14,
+					TextSize = IsMobile and 16 or 14,
 					BackgroundColor3 = FromRGB(255, 215, 160)
 				})
 
@@ -3260,7 +3299,7 @@ local Library do
 					Name = "\0",
 					ScaleType = Enum.ScaleType.Tile,
 					BorderColor3 = FromRGB(0, 0, 0),
-					TileSize = UDim2New(0, 6, 0, 6),
+					TileSize = UDim2New(0, IsMobile and 5 or 6, 0, IsMobile and 5 or 6),
 					Image = Library:GetImage("Checkers"),
 					BackgroundTransparency = 1,
 					Size = UDim2New(1, 0, 1, 0),
@@ -3292,9 +3331,9 @@ local Library do
 					AutoButtonColor = false,
 					BorderSizePixel = 0,
 					Position = UDim2New(0, 9, 0, 8),
-					Size = UDim2New(1, -44, 1, -110),
+					Size = UDim2New(1, -44, 1, -(IsMobile and 85 or 110)),
 					ZIndex = 2,
-					TextSize = 14,
+					TextSize = IsMobile and 16 or 14,
 					BackgroundColor3 = FromRGB(255, 215, 160)
 				})
 
@@ -3344,7 +3383,7 @@ local Library do
 				Items["PaletteDragger"] = Instances:Create("Frame", {
 					Parent = Items["Palette"].Instance,
 					Name = "\0",
-					Size = UDim2New(0, 4, 0, 4),
+					Size = UDim2New(0, IsMobile and 5 or 4, 0, IsMobile and 5 or 4),
 					Position = UDim2New(0, 5, 0, 5),
 					BorderColor3 = FromRGB(0, 0, 0),
 					ZIndex = 2,
@@ -3397,9 +3436,9 @@ local Library do
 				})
 
 				AnimationsDropdownItems["Dropdown"].Instance.AnchorPoint = Vector2New(0, 1)
-				AnimationsDropdownItems["Dropdown"].Instance.Position = UDim2New(0, 8, 1, -38)
-				AnimationsDropdownItems["Dropdown"].Instance.Size = UDim2New(1, -16, 0, 25)
-				AnimationsDropdownItems["OptionHolder"].Instance.Size = UDim2New(0, AnimationsDropdownItems["RealDropdown"].Instance.AbsoluteSize.X, 0, 68)
+				AnimationsDropdownItems["Dropdown"].Instance.Position = UDim2New(0, 8, 1, -(IsMobile and 30 or 38))
+				AnimationsDropdownItems["Dropdown"].Instance.Size = UDim2New(1, -16, 0, IsMobile and 30 or 25)
+				AnimationsDropdownItems["OptionHolder"].Instance.Size = UDim2New(0, AnimationsDropdownItems["RealDropdown"].Instance.AbsoluteSize.X, 0, IsMobile and 55 or 68)
 
 				HSVTextbox, HSVTextboxItems = Components.Textbox({
 					Name = "",
@@ -3416,8 +3455,8 @@ local Library do
 				HSVTextboxItems["Textbox"]:Clean()
 
 				HSVTextboxItems["Background"].Instance.AnchorPoint = Vector2New(0, 1)
-				HSVTextboxItems["Background"].Instance.Position = UDim2New(0, 8, 1, -8)
-				HSVTextboxItems["Background"].Instance.Size = UDim2New(1, -16, 0, 25)
+				HSVTextboxItems["Background"].Instance.Position = UDim2New(0, 8, 1, -(IsMobile and 6 or 8))
+				HSVTextboxItems["Background"].Instance.Size = UDim2New(1, -16, 0, IsMobile and 30 or 25)
 			end
 
 			local OldColor = Colorpicker.Color
@@ -3480,7 +3519,7 @@ local Library do
 
 				if self.IsOpen then 
 					Items["ColorpickerWindow"].Instance.Visible = true
-					Items["ColorpickerWindow"].Instance.Position = UDim2New(0, Items["ColorpickerButton"].Instance.AbsolutePosition.X + 50, 0, Items["ColorpickerButton"].Instance.AbsolutePosition.Y + 26)
+					Items["ColorpickerWindow"].Instance.Position = UDim2New(0, Items["ColorpickerButton"].Instance.AbsolutePosition.X + (IsMobile and 40 or 50), 0, Items["ColorpickerButton"].Instance.AbsolutePosition.Y + (IsMobile and 35 or 26))
 
 					for Index, Value in Library.OpenFrames do 
 						if Value ~= self and Value.Hue then
@@ -3517,7 +3556,7 @@ local Library do
 					if type(TransparencyProperty) == "table" then 
 						for _, Property in TransparencyProperty do 
 							NewTween = Tween:FadeItem(Object, Property, self.IsOpen, Data.Window.FadeSpeed)
-						end
+					end
 					else
 						NewTween = Tween:FadeItem(Object, TransparencyProperty, self.IsOpen, Data.Window.FadeSpeed)
 					end
@@ -3751,14 +3790,14 @@ local Library do
 					TextColor3 = FromRGB(255, 255, 255),
 					BorderColor3 = FromRGB(0, 0, 0),
 					Text = "None",
-					Size = UDim2New(0, 0, 0, 20),
+					Size = UDim2New(0, 0, 0, IsMobile and 25 or 20),
 					AutoButtonColor = false,
 					AnchorPoint = Vector2New(1, 0),
 					AutomaticSize = Enum.AutomaticSize.X,
 					Position = UDim2New(1, 0, 0, 0),
 					BorderSizePixel = 0,
 					ZIndex = 2,
-					TextSize = 14,
+					TextSize = IsMobile and 16 or 14,
 					BackgroundColor3 = FromRGB(15, 12, 16)
 				})  Items["KeyButton"]:AddToTheme({TextColor3 = "Text", BackgroundColor3 = "Background"})
 
@@ -3767,7 +3806,7 @@ local Library do
 
 					local Column = Index % MaxButtonsAdded
 
-					local Offset = Data.IsToggle and 44 or Data.IsCheckbox and 24 or 0
+					local Offset = Data.IsToggle and (IsMobile and 55 or 44) or Data.IsCheckbox and (IsMobile and 30 or 24) or 0
 
 					local ButtonSize = Items["KeyButton"].Instance.AbsoluteSize
 					local Spacing = -6
@@ -3782,23 +3821,23 @@ local Library do
 				Instances:Create("UIPadding", {
 					Parent = Items["KeyButton"].Instance,
 					Name = "\0",
-					PaddingRight = UDimNew(0, 5),
-					PaddingLeft = UDimNew(0, 6)
+					PaddingRight = UDimNew(0, IsMobile and 6 or 5),
+					PaddingLeft = UDimNew(0, IsMobile and 8 or 6)
 				})
 
 				Instances:Create("UICorner", {
 					Parent = Items["KeyButton"].Instance,
 					Name = "\0",
-					CornerRadius = UDimNew(0, 5)
+					CornerRadius = UDimNew(0, IsMobile and 6 or 5)
 				})
 
 				Items["KeybindWindow"] = Instances:Create("Frame", {
 					Parent = Library.Holder.Instance,
 					Name = "\0",
 					Visible = false,
-					Position = UDim2New(0, Items["KeyButton"].Instance.AbsolutePosition.X, 0, Items["KeyButton"].Instance.AbsolutePosition.Y + 25),
+					Position = UDim2New(0, Items["KeyButton"].Instance.AbsolutePosition.X, 0, Items["KeyButton"].Instance.AbsolutePosition.Y + (IsMobile and 30 or 25)),
 					BorderColor3 = FromRGB(0, 0, 0),
-					Size = UDim2New(0, 90, 0, 90),
+					Size = UDim2New(0, IsMobile and 75 or 90, 0, IsMobile and 75 or 90),
 					BorderSizePixel = 0,
 					BackgroundColor3 = FromRGB(15, 12, 16)
 				})  Items["KeybindWindow"]:AddToTheme({BackgroundColor3 = "Background"})
@@ -3806,7 +3845,7 @@ local Library do
 				Instances:Create("UICorner", {
 					Parent = Items["KeybindWindow"].Instance,
 					Name = "\0",
-					CornerRadius = UDimNew(0, 5)
+					CornerRadius = UDimNew(0, IsMobile and 6 or 5)
 				})
 
 				Items["Shadow"] = Instances:Create("ImageLabel", {
@@ -3838,16 +3877,16 @@ local Library do
 					AutoButtonColor = false,
 					BorderSizePixel = 0,
 					Position = UDim2New(0, 8, 0, 8),
-					Size = UDim2New(1, -16, 0, 25),
+					Size = UDim2New(1, -16, 0, IsMobile and 20 or 25),
 					ZIndex = 2,
-					TextSize = 14,
+					TextSize = IsMobile and 16 or 14,
 					BackgroundColor3 = FromRGB(22, 20, 24)
 				})  Items["Toggle"]:AddToTheme({BackgroundColor3 = "Inline"})
 
 				Instances:Create("UICorner", {
 					Parent = Items["Toggle"].Instance,
 					Name = "\0",
-					CornerRadius = UDimNew(0, 5)
+					CornerRadius = UDimNew(0, IsMobile and 6 or 5)
 				})
 
 				Items["ToggleText"] = Instances:Create("TextLabel", {
@@ -3862,7 +3901,7 @@ local Library do
 					Position = UDim2New(0, 8, 0, 0),
 					Size = UDim2New(1, -15, 1, 0),
 					ZIndex = 2,
-					TextSize = 14,
+					TextSize = IsMobile and 16 or 14,
 					BackgroundColor3 = FromRGB(255, 255, 255)
 				})  Items["ToggleText"]:AddToTheme({TextColor3 = "Text"})
 
@@ -3876,17 +3915,17 @@ local Library do
 					AutoButtonColor = false,
 					BorderSizePixel = 0,
 					BackgroundTransparency = 1,
-					Position = UDim2New(0, 8, 0, 33),
-					Size = UDim2New(1, -16, 0, 25),
+					Position = UDim2New(0, 8, 0, (IsMobile and 28 or 33)),
+					Size = UDim2New(1, -16, 0, IsMobile and 20 or 25),
 					ZIndex = 2,
-					TextSize = 14,
+					TextSize = IsMobile and 16 or 14,
 					BackgroundColor3 = FromRGB(22, 20, 24)
 				})  Items["Hold"]:AddToTheme({BackgroundColor3 = "Inline"})
 
 				Instances:Create("UICorner", {
 					Parent = Items["Hold"].Instance,
 					Name = "\0",
-					CornerRadius = UDimNew(0, 5)
+					CornerRadius = UDimNew(0, IsMobile and 6 or 5)
 				})
 
 				Items["HoldText"] = Instances:Create("TextLabel", {
@@ -3902,7 +3941,7 @@ local Library do
 					Position = UDim2New(0, 4, 0, 0),
 					BorderSizePixel = 0,
 					ZIndex = 2,
-					TextSize = 14,
+					TextSize = IsMobile and 16 or 14,
 					BackgroundColor3 = FromRGB(255, 255, 255)
 				})  Items["HoldText"]:AddToTheme({TextColor3 = "Text"})
 
@@ -3916,17 +3955,17 @@ local Library do
 					AutoButtonColor = false,
 					BorderSizePixel = 0,
 					BackgroundTransparency = 1,
-					Position = UDim2New(0, 8, 0, 58),
-					Size = UDim2New(1, -16, 0, 25),
+					Position = UDim2New(0, 8, 0, (IsMobile and 48 or 58)),
+					Size = UDim2New(1, -16, 0, IsMobile and 20 or 25),
 					ZIndex = 2,
-					TextSize = 14,
+					TextSize = IsMobile and 16 or 14,
 					BackgroundColor3 = FromRGB(22, 20, 24)
 				})  Items["Always"]:AddToTheme({BackgroundColor3 = "Inline"})
 
 				Instances:Create("UICorner", {
 					Parent = Items["Always"].Instance,
 					Name = "\0",
-					CornerRadius = UDimNew(0, 5)
+					CornerRadius = UDimNew(0, IsMobile and 6 or 5)
 				})
 
 				Items["AlwaysText"] = Instances:Create("TextLabel", {
@@ -3942,7 +3981,7 @@ local Library do
 					Position = UDim2New(0, 4, 0, 0),
 					BorderSizePixel = 0,
 					ZIndex = 2,
-					TextSize = 14,
+					TextSize = IsMobile and 16 or 14,
 					BackgroundColor3 = FromRGB(255, 255, 255)
 				})  Items["AlwaysText"]:AddToTheme({TextColor3 = "Text"})
 			end
@@ -4078,7 +4117,7 @@ local Library do
 
 				if self.IsOpen then
 					Items["KeybindWindow"].Instance.Visible = true
-					Items["KeybindWindow"].Instance.Position = UDim2New(0, Items["KeyButton"].Instance.AbsolutePosition.X, 0, Items["KeyButton"].Instance.AbsolutePosition.Y + 25)
+					Items["KeybindWindow"].Instance.Position = UDim2New(0, Items["KeyButton"].Instance.AbsolutePosition.X, 0, Items["KeyButton"].Instance.AbsolutePosition.Y + (IsMobile and 30 or 25))
 
 					for Index, Value in Library.OpenFrames do
 						if Value ~= self and Value.Key then 
@@ -4242,7 +4281,7 @@ local Library do
 					Parent = Data.Parent.Instance,
 					Name = "\0",
 					BackgroundTransparency = 1,
-					Size = UDim2New(1, 0, 0, 46),
+					Size = UDim2New(1, 0, 0, IsMobile and 56 or 46),
 					BorderColor3 = FromRGB(0, 0, 0),
 					ZIndex = 2,
 					BorderSizePixel = 0,
@@ -4258,10 +4297,10 @@ local Library do
 					Text = Data.Name,
 					AutomaticSize = Enum.AutomaticSize.X,
 					BackgroundTransparency = 1,
-					Size = UDim2New(0, 0, 0, 15),
+					Size = UDim2New(0, 0, 0, IsMobile and 18 or 15),
 					BorderSizePixel = 0,
 					ZIndex = 2,
-					TextSize = 14,
+					TextSize = IsMobile and 16 or 14,
 					BackgroundColor3 = FromRGB(255, 255, 255)
 				})  Items["Text"]:AddToTheme({TextColor3 = "Text"})
 
@@ -4271,7 +4310,7 @@ local Library do
 					BorderColor3 = FromRGB(0, 0, 0),
 					AnchorPoint = Vector2New(0, 1),
 					Position = UDim2New(0, 0, 1, 0),
-					Size = UDim2New(1, 0, 0, 25),
+					Size = UDim2New(1, 0, 0, IsMobile and 35 or 25),
 					ZIndex = 2,
 					BorderSizePixel = 0,
 					BackgroundColor3 = FromRGB(36, 32, 39)
@@ -4289,7 +4328,7 @@ local Library do
 				Instances:Create("UICorner", {
 					Parent = Items["Background"].Instance,
 					Name = "\0",
-					CornerRadius = UDimNew(0, 5)
+					CornerRadius = UDimNew(0, IsMobile and 6 or 5)
 				})
 
 				Items["Input"] = Instances:Create("TextBox", {
@@ -4299,7 +4338,7 @@ local Library do
 					TextStrokeColor3 = FromRGB(255, 255, 255),
 					PlaceholderColor3 = FromRGB(185, 185, 185),
 					PlaceholderText = Data.Placeholder,
-					TextSize = 14,
+					TextSize = IsMobile and 16 or 14,
 					Size = UDim2New(1, -16, 1, 0),
 					TextColor3 = FromRGB(255, 255, 255),
 					BorderColor3 = FromRGB(0, 0, 0),
@@ -4309,7 +4348,7 @@ local Library do
 					BackgroundTransparency = 1,
 					TextXAlignment = Enum.TextXAlignment.Left,
 					CursorPosition = -1,
-					Position = UDim2New(0, 8, 0, 0),
+					Position = UDim2New(0, IsMobile and 10 or 8, 0, 0),
 					BorderSizePixel = 0,
 					BackgroundColor3 = FromRGB(255, 255, 255)
 				})  Items["Input"]:AddToTheme({TextColor3 = "Text", PlaceholderColor3 = "Inactive Text"})
@@ -4414,12 +4453,12 @@ local Library do
 				AutomaticSize = Enum.AutomaticSize.Y,
 				BackgroundColor3 = FromRGB(16, 16, 16),
 				BorderSizePixel = 0,
-				Size = UDim2New(0, 320, 0, 70)
+				Size = UDim2New(0, IsMobile and 280 or 320, 0, 70)
 			}) Items["Notification"]:AddToTheme({BackgroundColor3 = "Background"})
 
 			Instances:Create("UICorner", {
 				Parent = Items["Notification"].Instance,
-				CornerRadius = UDimNew(0, 8)
+				CornerRadius = UDimNew(0, IsMobile and 6 or 8)
 			})
 
 			Items["Stroke"] = Instances:Create("UIStroke", {
@@ -4433,7 +4472,7 @@ local Library do
 				FontFace = Library.Font,
 				Text = Text,
 				TextColor3 = FromRGB(199, 199, 203),
-				TextSize = 16,
+				TextSize = IsMobile and 14 or 16,
 				TextXAlignment = Enum.TextXAlignment.Left,
 				BackgroundTransparency = 1,
 				Size = UDim2New(1, -20, 0, 20),
@@ -4445,7 +4484,7 @@ local Library do
 				FontFace = Library.Font,
 				Text = Description,
 				TextColor3 = FromRGB(180, 180, 185),
-				TextSize = 14,
+				TextSize = IsMobile and 12 or 14,
 				TextXAlignment = Enum.TextXAlignment.Left,
 				TextYAlignment = Enum.TextYAlignment.Top,
 				BackgroundTransparency = 1,
@@ -4496,7 +4535,7 @@ local Library do
 				Parent = Library.Holder.Instance,
 				Name = "\0",
 				BackgroundTransparency = 0.30000001192092896,
-				Position = UDim2New(0, 15, 0.5, 0),
+				Position = UDim2New(0, IsMobile and 10 or 15, 0.5, 0),
 				BorderColor3 = FromRGB(0, 0, 0),
 				BorderSizePixel = 0,
 				AutomaticSize = Enum.AutomaticSize.XY,
@@ -4508,7 +4547,7 @@ local Library do
 			Instances:Create("UICorner", {
 				Parent = Items["KeybindList"].Instance,
 				Name = "\0",
-				CornerRadius = UDimNew(0, 5)
+				CornerRadius = UDimNew(0, IsMobile and 6 or 5)
 			})
 
 			Items["Title"] = Instances:Create("TextLabel", {
@@ -4519,27 +4558,27 @@ local Library do
 				BorderColor3 = FromRGB(0, 0, 0),
 				Text = "Keybinds",
 				BackgroundTransparency = 1,
-				Size = UDim2New(0, 0, 0, 15),
+				Size = UDim2New(0, 0, 0, IsMobile and 18 or 15),
 				BorderSizePixel = 0,
 				AutomaticSize = Enum.AutomaticSize.X,
-				TextSize = 14,
+				TextSize = IsMobile and 16 or 14,
 				BackgroundColor3 = FromRGB(255, 255, 255)
 			})  Items["Title"]:AddToTheme({TextColor3 = "Text"})
 
 			Instances:Create("UIPadding", {
 				Parent = Items["KeybindList"].Instance,
 				Name = "\0",
-				PaddingTop = UDimNew(0, 8),
-				PaddingBottom = UDimNew(0, 8),
-				PaddingRight = UDimNew(0, 8),
-				PaddingLeft = UDimNew(0, 8)
+				PaddingTop = UDimNew(0, IsMobile and 6 or 8),
+				PaddingBottom = UDimNew(0, IsMobile and 6 or 8),
+				PaddingRight = UDimNew(0, IsMobile and 6 or 8),
+				PaddingLeft = UDimNew(0, IsMobile and 6 or 8)
 			})
 
 			Items["Content"] = Instances:Create("Frame", {
 				Parent = Items["KeybindList"].Instance,
 				Name = "\0",
 				BackgroundTransparency = 1,
-				Position = UDim2New(0, 8, 0, 20),
+				Position = UDim2New(0, 8, 0, IsMobile and 24 or 20),
 				BorderColor3 = FromRGB(0, 0, 0),
 				BorderSizePixel = 0,
 				AutomaticSize = Enum.AutomaticSize.XY,
@@ -4556,7 +4595,7 @@ local Library do
 			Instances:Create("UIPadding", {
 				Parent = Items["Content"].Instance,
 				Name = "\0",
-				PaddingRight = UDimNew(0, 5)
+				PaddingRight = UDimNew(0, IsMobile and 4 or 5)
 			})
 		end
 
@@ -4569,18 +4608,18 @@ local Library do
 				BorderColor3 = FromRGB(0, 0, 0),
 				Text = ""..Key.." - ".. Name .. " (".. Mode .. ")",
 				BackgroundTransparency = 1,
-				Size = UDim2New(0, 0, 0, 20),
+				Size = UDim2New(0, 0, 0, IsMobile and 24 or 20),
 				BorderSizePixel = 0,
 				AutomaticSize = Enum.AutomaticSize.X,
-				TextSize = 14,
+				TextSize = IsMobile and 12 or 14,
 				BackgroundColor3 = FromRGB(255, 255, 255)
 			})  NewKey:AddToTheme({TextColor3 = "Text"})
 
 			Instances:Create("UIPadding", {
 				Parent = NewKey.Instance,
 				Name = "\0",
-				PaddingRight = UDimNew(0, 3),
-				PaddingLeft = UDimNew(0, 3)
+				PaddingRight = UDimNew(0, IsMobile and 4 or 3),
+				PaddingLeft = UDimNew(0, IsMobile and 4 or 3)
 			})
 
 			function NewKey:Set(Key, Name, Mode)
@@ -4616,8 +4655,8 @@ local Library do
 				Name = "\0",
 				BorderColor3 = FromRGB(0, 0, 0),
 				AnchorPoint = Vector2New(0.5, 0),
-				Position = UDim2New(0.5, 0, 0, 15),
-				Size = UDim2New(0, 100, 0, 60),
+				Position = UDim2New(0.5, 0, 0, IsMobile and 10 or 15),
+				Size = UDim2New(0, 100, 0, IsMobile and 50 or 60),
 				BorderSizePixel = 0,
 				AutomaticSize = Enum.AutomaticSize.XY,
 				BackgroundColor3 = FromRGB(16, 18, 21)
@@ -4635,7 +4674,7 @@ local Library do
 			Instances:Create("UICorner", {
 				Parent = Items["Watermark"].Instance,
 				Name = "\0",
-				CornerRadius = UDimNew(0, 5)
+				CornerRadius = UDimNew(0, IsMobile and 4 or 5)
 			})
 
 			Items["Text"] = Instances:Create("TextLabel", {
@@ -4652,17 +4691,17 @@ local Library do
 				TextXAlignment = Enum.TextXAlignment.Center,
 				BorderSizePixel = 0,
 				AutomaticSize = Enum.AutomaticSize.XY,
-				TextSize = 14,
+				TextSize = IsMobile and 12 or 14,
 				BackgroundColor3 = FromRGB(255, 255, 255)
 			})  Items["Text"]:AddToTheme({TextColor3 = "Text"})
 
 			Instances:Create("UIPadding", {
 				Parent = Items["Watermark"].Instance,
 				Name = "\0",
-				PaddingTop = UDimNew(0, 7),
-				PaddingBottom = UDimNew(0, 7),
-				PaddingRight = UDimNew(0, 7),
-				PaddingLeft = UDimNew(0, 7)
+				PaddingTop = UDimNew(0, IsMobile and 5 or 7),
+				PaddingBottom = UDimNew(0, IsMobile and 5 or 7),
+				PaddingRight = UDimNew(0, IsMobile and 5 or 7),
+				PaddingLeft = UDimNew(0, IsMobile and 5 or 7)
 			})
 		end
 
@@ -4694,24 +4733,9 @@ local Library do
 	Library.Window = function(self, Properties)
 		Properties = Properties or { }
 
-		-- MODIFICATION for mobile: scale down UI size by 25% if on mobile/touch device
-		local defaultWidth = 770
-		local defaultHeight = 526
-		local mobileWidth = 526   -- ~30% smaller (closer to 25% from 770)
-		local mobileHeight = 350   -- ~25% smaller from 526
-		
-		local windowSize = Properties.Size or Properties.size
-		if not windowSize then
-			if IsMobile then
-				windowSize = UDim2New(0, mobileWidth, 0, mobileHeight)
-			else
-				windowSize = UDim2New(0, defaultWidth, 0, defaultHeight)
-			end
-		end
-
 		local Window = {
 			Name = Properties.Name or Properties.name or "eclipse",
-			Size = windowSize,
+			Size = IsMobile and UDim2New(0, 526 * 0.65, 0, 350 * 0.65) or (Properties.Size or Properties.size or (not IsMobile and UDim2New(0, 770, 0, 526) or UDim2New(0, 526, 0, 350))),
 			FadeSpeed = Properties.FadeSpeed or Properties.fadespeed or 0.25,
 			BackgroundIcon = Properties.BackgroundIcon or Properties.backgroundicon or "rbxassetid://",
 
@@ -4720,6 +4744,11 @@ local Library do
 
 			Items = { }
 		}
+		
+		-- Scale window size for mobile if not manually set
+		if IsMobile and not Properties.Size and not Properties.size then
+			Window.Size = UDim2New(0, 526 * 0.65, 0, 350 * 0.65)
+		end
 
 		local Items = { } do
 			Items["MainFrame"] = Instances:Create("Frame", {
@@ -4728,7 +4757,7 @@ local Library do
 				BorderColor3 = FromRGB(0, 0, 0),
 				AnchorPoint = Vector2New(0, 0),
 				BackgroundTransparency = 0.3,
-				Position = UDim2New(0, Camera.ViewportSize.X / 3.5, 0, Camera.ViewportSize.Y / 3.5),
+				Position = UDim2New(0, Camera.ViewportSize.X / (IsMobile and 2 or 3.5), 0, Camera.ViewportSize.Y / (IsMobile and 2 or 3.5)),
 				Size = Window.Size,
 				ClipsDescendants = true,
 				Visible = true,
@@ -4754,13 +4783,13 @@ local Library do
 			Instances:Create("UICorner", {
 				Parent = Items["ImageBackground"].Instance,
 				Name = "\0",
-				CornerRadius = UDimNew(0, 5)
+				CornerRadius = UDimNew(0, IsMobile and 4 or 5)
 			})
 
 			Instances:Create("UICorner", {
 				Parent = Items["MainFrame"].Instance,
 				Name = "\0",
-				CornerRadius = UDimNew(0, 5)
+				CornerRadius = UDimNew(0, IsMobile and 4 or 5)
 			})
 
 			Items["Shadow"] = Instances:Create("ImageLabel", {
@@ -4790,27 +4819,22 @@ local Library do
 				BorderColor3 = FromRGB(0, 0, 0),
 				Text = Window.Name,
 				AutomaticSize = Enum.AutomaticSize.X,
-				Size = UDim2New(0, 0, 0, 15),
+				Size = UDim2New(0, 0, 0, IsMobile and 12 or 15),
 				BackgroundTransparency = 1,
-				Position = UDim2New(0, 9, 0, 8),
+				Position = UDim2New(0, IsMobile and 6 or 9, 0, IsMobile and 5 or 8),
 				BorderSizePixel = 0,
 				ZIndex = 2,
-				TextSize = 14,
+				TextSize = IsMobile and 12 or 14,
 				BackgroundColor3 = FromRGB(255, 255, 255)
 			})  Items["Title"]:AddToTheme({TextColor3 = "Text"})
-
-			-- MODIFICATION for mobile: adjust sidebar width based on mobile state
-			local sidebarWidth = not IsMobile and 224 or 150
-			local contentLeftOffset = not IsMobile and 225 or 163
-			local contentWidth = not IsMobile and 1, -233 or 1, -171
 
 			Items["Pages"] = Instances:Create("Frame", {
 				Parent = Items["MainFrame"].Instance,
 				Name = "\0",
 				BorderColor3 = FromRGB(0, 0, 0),
 				BackgroundTransparency = 1,
-				Position = UDim2New(0, 0, 0, 30),
-				Size = UDim2New(0, sidebarWidth, 1, -30),
+				Position = UDim2New(0, 0, 0, IsMobile and 20 or 30),
+				Size = not IsMobile and UDim2New(0, 224, 1, -30) or UDim2New(0, 150, 1, -30),
 				ZIndex = 2,
 				BorderSizePixel = 0,
 				BackgroundColor3 = FromRGB(255, 255, 255)
@@ -4819,14 +4843,14 @@ local Library do
 			Instances:Create("UIPadding", {
 				Parent = Items["Pages"].Instance,
 				Name = "\0",
-				PaddingRight = UDimNew(0, 8),
-				PaddingLeft = UDimNew(0, 8)
+				PaddingRight = UDimNew(0, IsMobile and 4 or 8),
+				PaddingLeft = UDimNew(0, IsMobile and 4 or 8)
 			})
 
 			Instances:Create("UIListLayout", {
 				Parent = Items["Pages"].Instance,
 				Name = "\0",
-				Padding = UDimNew(0, 8),
+				Padding = UDimNew(0, IsMobile and 4 or 8),
 				SortOrder = Enum.SortOrder.LayoutOrder
 			})
 
@@ -4835,8 +4859,8 @@ local Library do
 				Name = "\0",
 				BorderColor3 = FromRGB(0, 0, 0),
 				BackgroundTransparency = 1,
-				Position = UDim2New(0, contentLeftOffset, 0, 30),
-				Size = UDim2New(contentWidth, 0, 1, -38),
+				Position = not IsMobile and UDim2New(0, 225, 0, 30) or UDim2New(0, 163, 0, IsMobile and 20 or 30),
+				Size = not IsMobile and UDim2New(1, -233, 1, -38) or UDim2New(1, -171, 1, -38),
 				ZIndex = 2,
 				BorderSizePixel = 0,
 				BackgroundColor3 = FromRGB(255, 255, 255)
@@ -4846,23 +4870,22 @@ local Library do
 				Parent = Items["MainFrame"].Instance,
 				Name = "\0",
 				BorderColor3 = FromRGB(0, 0, 0),
-				Size = UDim2New(0, 17, 0, 17),
+				Size = UDim2New(0, IsMobile and 14 or 17, 0, IsMobile and 14 or 17),
 				AutoButtonColor = false,
 				AnchorPoint = Vector2New(1, 0),
 				Image = "rbxassetid://94817928404736",
-				Position = UDim2New(1, -27, 0, 3),
+				Position = UDim2New(1, -(IsMobile and 22 or 27), 0, IsMobile and 2 or 3),
 				BackgroundTransparency = 1,
 				ZIndex = 2,
 				BorderSizePixel = 0,
 				BackgroundColor3 = FromRGB(255, 255, 255)
 			})
 
-			local separatorPos = not IsMobile and 220 or 152
 			Instances:Create("Frame", {
 				Parent = Items["MainFrame"].Instance,
 				Name = "\0",
 				Size = UDim2New(0, 1, 1, 0),
-				Position = UDim2New(0, separatorPos, 0, 0),
+				Position = not IsMobile and UDim2New(0, 220, 0, 0) or UDim2New(0, 152, 0, 0),
 				BorderColor3 = FromRGB(0, 0, 0),
 				ZIndex = 2,
 				BorderSizePixel = 0,
@@ -4874,12 +4897,12 @@ local Library do
 				Name = "\0",
 				ScaleType = Enum.ScaleType.Fit,
 				BorderColor3 = FromRGB(0, 0, 0),
-				Size = UDim2New(0, 17, 0, 17),
+				Size = UDim2New(0, IsMobile and 14 or 17, 0, IsMobile and 14 or 17),
 				AutoButtonColor = false,
 				AnchorPoint = Vector2New(1, 0),
 				Image = "rbxassetid://76001605964586",
 				BackgroundTransparency = 1,
-				Position = UDim2New(1, -8, 0, 8),
+				Position = UDim2New(1, -(IsMobile and 6 or 8), 0, IsMobile and 5 or 8),
 				ZIndex = 2,
 				BorderSizePixel = 0,
 				BackgroundColor3 = FromRGB(255, 255, 255)
@@ -4888,7 +4911,7 @@ local Library do
 			Items["Search"] = Instances:Create("Frame", {
 				Parent = Items["Content"].Instance,
 				Name = "\0",
-				Size = UDim2New(1, 0, 0, 35),
+				Size = UDim2New(1, 0, 0, IsMobile and 28 or 35),
 				BorderColor3 = FromRGB(0, 0, 0),
 				ZIndex = 2,
 				BorderSizePixel = 0,
@@ -4898,7 +4921,7 @@ local Library do
 			Instances:Create("UICorner", {
 				Parent = Items["Search"].Instance,
 				Name = "\0",
-				CornerRadius = UDimNew(0, 5)
+				CornerRadius = UDimNew(0, IsMobile and 4 or 5)
 			})
 
 			Items["Icon"] = Instances:Create("ImageLabel", {
@@ -4907,11 +4930,11 @@ local Library do
 				ScaleType = Enum.ScaleType.Fit,
 				ImageTransparency = 0.4000000059604645,
 				BorderColor3 = FromRGB(0, 0, 0),
-				Size = UDim2New(0, 20, 0, 20),
+				Size = UDim2New(0, IsMobile and 16 or 20, 0, IsMobile and 16 or 20),
 				AnchorPoint = Vector2New(0, 0.5),
 				Image = "rbxassetid://71924825350727",
 				BackgroundTransparency = 1,
-				Position = UDim2New(0, 8, 0.5, 0),
+				Position = UDim2New(0, IsMobile and 6 or 8, 0.5, 0),
 				ZIndex = 2,
 				BorderSizePixel = 0,
 				BackgroundColor3 = FromRGB(255, 255, 255)
@@ -4924,15 +4947,15 @@ local Library do
 				AnchorPoint = Vector2New(0, 0.5),
 				PlaceholderColor3 = FromRGB(185, 185, 185),
 				PlaceholderText = "Search..",
-				TextSize = 14,
-				Size = UDim2New(1, -43, 0, 15),
+				TextSize = IsMobile and 14 or 14,
+				Size = UDim2New(1, -43, 0, IsMobile and 18 or 15),
 				TextColor3 = FromRGB(255, 255, 255),
 				BorderColor3 = FromRGB(0, 0, 0),
 				Text = "",
 				BackgroundTransparency = 1,
 				TextXAlignment = Enum.TextXAlignment.Left,
 				ZIndex = 2,
-				Position = UDim2New(0, 35, 0.5, 0),
+				Position = UDim2New(0, IsMobile and 28 or 35, 0.5, 0),
 				BorderSizePixel = 0,
 				BackgroundColor3 = FromRGB(255, 255, 255)
 			})  Items["Input"]:AddToTheme({TextColor3 = "Text", PlaceholderColor3 = "Inactive Text"})
@@ -4943,7 +4966,7 @@ local Library do
 				BackgroundTransparency = 1,
 				Position = UDim2New(0, 0, 0, 0),
 				BorderColor3 = FromRGB(0, 0, 0),
-				Size = UDim2New(0, 16, 0, 16),
+				Size = UDim2New(0, IsMobile and 12 or 16, 0, IsMobile and 12 or 16),
 				BorderSizePixel = 0,
 				BackgroundColor3 = FromRGB(0, 0, 0)
 			})
@@ -4955,7 +4978,7 @@ local Library do
 				BorderColor3 = FromRGB(0, 0, 0),
 				Image = "rbxassetid://132511743665753",
 				BackgroundTransparency = 1,
-				Size = UDim2New(0, 16, 0, 16),
+				Size = UDim2New(0, IsMobile and 12 or 16, 0, IsMobile and 12 or 16),
 				BorderSizePixel = 0,
 				ZIndex = 10001,
 				Rotation = -90,
@@ -4963,6 +4986,7 @@ local Library do
 			})  Items["Image"]:AddToTheme({ImageColor3 = "Accent"})
 
 			if IsMobile then 
+				-- Create larger floating button for mobile
 				Items["FloatingButton"] = Instances:Create("TextButton", {
 					Parent = Library.Holder.Instance,
 					Text = "",
@@ -4970,7 +4994,7 @@ local Library do
 					Name = "\0",
 					Position = UDim2New(0, 125, 0, 125),
 					BorderColor3 = FromRGB(0, 0, 0),
-					Size = UDim2New(0, 50, 0, 50),
+					Size = UDim2New(0, 60, 0, 60),
 					BorderSizePixel = 0,
 					ZIndex = 127,
 					BackgroundColor3 = Library.Theme.Background
@@ -4982,10 +5006,10 @@ local Library do
 					Parent = Items["FloatingButton"].Instance,
 					BorderColor3 = FromRGB(0, 0, 0),
 					Name = "\0",
-					Text = "Close",
+					Text = "Open",
 					FontFace = Library.Font,
 					TextColor3 = FromRGB(255, 255, 255),
-					TextSize = 14,
+					TextSize = IsMobile and 12 or 14,
 					BackgroundTransparency = 1,
 					AnchorPoint = Vector2New(0.5, 0.5),
 					Position = UDim2New(0.5, 0, 0.5, 0),
@@ -5004,8 +5028,12 @@ local Library do
 					IsOpen = not IsOpen
 					task.wait()
 					Window:SetOpen(IsOpen)
-					Items["OpenTitle"].Instance.Text = IsOpen and "Open" or "Close"
+					Items["OpenTitle"].Instance.Text = IsOpen and "Close" or "Open"
 				end)
+				
+				-- Make sure the UI starts closed on mobile
+				Items["MainFrame"].Instance.Visible = false
+				Window.IsOpen = false
 			end
 
 			Window.Items = Items
@@ -5050,7 +5078,7 @@ local Library do
 			end)
 		end)
 
-		Items["Input"]:Connect("FocusLost", function()
+		Items["Input"]:Connect("FocusLoss", function()
 			if RenderStepped then 
 				RenderStepped:Disconnect()
 				RenderStepped = nil
@@ -5065,8 +5093,8 @@ local Library do
 			IsMinisize = Bool
 
 			if IsMinisize then 
-				Items["MainFrame"]:Tween(nil, {Size = UDim2New(0, OldSize.X, 0, 35)})
-				Items["MainFrame"]:Tween(nil, {Size = UDim2New(0, 275, 0, 35)})
+				Items["MainFrame"]:Tween(nil, {Size = UDim2New(0, OldSize.X, 0, IsMobile and 28 or 35)})
+				Items["MainFrame"]:Tween(nil, {Size = UDim2New(0, 275, 0, IsMobile and 28 or 35)})
 			else
 				Items["MainFrame"]:Tween(nil, {Size = UDim2New(0, OldSize.X, 0, OldSize.Y)})
 			end
@@ -5074,26 +5102,35 @@ local Library do
 
 		function Window:SetOpen(Bool)
 			IsOpen = Bool
+			Window.IsOpen = Bool
 
 			if IsOpen then
 				Items["MainFrame"].Instance.Visible = true
+				if IsMobile and Items["FloatingButton"] then
+					Items["OpenTitle"].Instance.Text = "Close"
+				end
 			else
 				Items["MainFrame"].Instance.Visible = false
+				if IsMobile and Items["FloatingButton"] then
+					Items["OpenTitle"].Instance.Text = "Open"
+				end
 			end
 		end
 
 		Library:Connect(UserInputService.InputBegan, function(Input)
-			if tostring(Input.KeyCode) == Library.MenuKeybind or tostring(Input.UserInputType) == Library.MenuKeybind then
-				Window.IsOpen = not Window.IsOpen
-				Items["Image"].Instance.Visible = Window.IsOpen
-				UserInputService.MouseIconEnabled = not Window.IsOpen
-				Items["MainFrame"].Instance.Visible = Window.IsOpen
+			if not IsMobile then
+				if tostring(Input.KeyCode) == Library.MenuKeybind or tostring(Input.UserInputType) == Library.MenuKeybind then
+					Window.IsOpen = not Window.IsOpen
+					Items["Image"].Instance.Visible = Window.IsOpen
+					UserInputService.MouseIconEnabled = not Window.IsOpen
+					Items["MainFrame"].Instance.Visible = Window.IsOpen
+				end
 			end
 		end)
 
 		Library:Connect(RunService.RenderStepped, function()
 			local MouseLocation = UserInputService:GetMouseLocation() 
-			Items["Cursor"].Instance.Position = UDim2New(0, MouseLocation.X - 1, 0, MouseLocation.Y - 56)           
+			Items["Cursor"].Instance.Position = UDim2New(0, MouseLocation.X - 1, 0, MouseLocation.Y - (IsMobile and 30 or 56))           
 		end)
 
 		Items["MinimizeButton"]:Connect("MouseButton1Down", function()
@@ -5138,17 +5175,17 @@ local Library do
 				AutoButtonColor = false,
 				BorderSizePixel = 0,
 				BackgroundTransparency = 1,
-				Size = UDim2New(1, 0, 0, 35),
+				Size = UDim2New(1, 0, 0, IsMobile and 30 or 35),
 				ClipsDescendants = true,
 				ZIndex = 2,
-				TextSize = 14,
+				TextSize = IsMobile and 16 or 14,
 				BackgroundColor3 = FromRGB(22, 20, 24)
 			})  Items["Inactive"]:AddToTheme({BackgroundColor3 = "Inline"})
 
 			Instances:Create("UICorner", {
 				Parent = Items["Inactive"].Instance,
 				Name = "\0",
-				CornerRadius = UDimNew(0, 5)
+				CornerRadius = UDimNew(0, IsMobile and 4 or 5)
 			})
 
 			Items["Liner"] = Instances:Create("Frame", {
@@ -5178,14 +5215,14 @@ local Library do
 				TextTransparency = 0.4,
 				Text = Page.Name,
 				AutomaticSize = Enum.AutomaticSize.X,
-				Size = UDim2New(0, 0, 0, 15),
+				Size = UDim2New(0, 0, 0, IsMobile and 18 or 15),
 				AnchorPoint = Vector2New(0, 0.5),
 				BorderSizePixel = 0,
 				BackgroundTransparency = 1,
 				Position = UDim2New(0, 4, 0.5, 0),
 				BorderColor3 = FromRGB(0, 0, 0),
 				ZIndex = 2,
-				TextSize = 14,
+				TextSize = IsMobile and 16 or 14,
 				BackgroundColor3 = FromRGB(255, 255, 255)
 			})  Items["Text"]:AddToTheme({TextColor3 = "Text"})
 
@@ -5207,8 +5244,8 @@ local Library do
 					Name = "\0",
 					BorderColor3 = FromRGB(0, 0, 0),
 					BackgroundTransparency = 1,
-					Position = UDim2New(0, 0, 0, 43),
-					Size = UDim2New(1, 0, 1, -43),
+					Position = UDim2New(0, 0, 0, IsMobile and 35 or 43),
+					Size = UDim2New(1, 0, 1, -(IsMobile and 35 or 43)),
 					ZIndex = 2,
 					BorderSizePixel = 0,
 					BackgroundColor3 = FromRGB(255, 255, 255)
@@ -5219,7 +5256,7 @@ local Library do
 					Name = "\0",
 					FillDirection = Enum.FillDirection.Horizontal,
 					HorizontalFlex = Enum.UIFlexAlignment.Fill,
-					Padding = UDimNew(0, 8),
+					Padding = UDimNew(0, IsMobile and 4 or 8),
 					SortOrder = Enum.SortOrder.LayoutOrder,
 					VerticalFlex = Enum.UIFlexAlignment.Fill
 				})
@@ -5244,21 +5281,21 @@ local Library do
 					Instances:Create("UIPadding", {
 						Parent = NewColumn.Instance,
 						Name = "\0",
-						PaddingBottom = UDimNew(0, 8)
+						PaddingBottom = UDimNew(0, IsMobile and 6 or 8)
 					})
 
 					Instances:Create("UIListLayout", {
 						Parent = NewColumn.Instance,
 						Name = "\0",
-						Padding = UDimNew(0, 8),
+						Padding = UDimNew(0, IsMobile and 6 or 8),
 						SortOrder = Enum.SortOrder.LayoutOrder
 					})
 
 					Page.ColumnsData[Index] = NewColumn
 				end
 			else
-				Items["Page"].Instance.Size = UDim2New(1, 0, 1, -43)
-				Items["Page"].Instance.Position = UDim2New(0, 0, 0, 43)
+				Items["Page"].Instance.Size = UDim2New(1, 0, 1, -(IsMobile and 35 or 43))
+				Items["Page"].Instance.Position = UDim2New(0, 0, 0, IsMobile and 35 or 43)
 
 				Instances:Create("UIListLayout", {
 					Parent = Items["Page"].Instance,
@@ -5266,7 +5303,7 @@ local Library do
 					VerticalAlignment = Enum.VerticalAlignment.Center,
 					SortOrder = Enum.SortOrder.LayoutOrder,
 					HorizontalAlignment = Enum.HorizontalAlignment.Center,
-					Padding = UDimNew(0, 15)
+					Padding = UDimNew(0, IsMobile and 10 or 15)
 				})
 			end
 
@@ -5286,9 +5323,9 @@ local Library do
 			if self.Active then
 				Items["Page"].Instance.Visible = true
 
-				Items["Liner"]:Tween(nil, {BackgroundTransparency = 0, Size = UDim2New(0, 6, 1, -20)})
+				Items["Liner"]:Tween(nil, {BackgroundTransparency = 0, Size = UDim2New(0, IsMobile and 5 or 6, 1, -20)})
 				Items["Inactive"]:Tween(nil, {BackgroundTransparency = 0})
-				Items["Text"]:Tween(nil, {TextTransparency = 0, Position = UDim2New(0, 12, 0.5, 0)})
+				Items["Text"]:Tween(nil, {TextTransparency = 0, Position = UDim2New(0, IsMobile and 10 or 12, 0.5, 0)})
 
 				Library.CurrentPage = Page
 			else
@@ -5405,7 +5442,7 @@ local Library do
 				Parent = Section.Page.ColumnsData[Section.Side].Instance,
 				Name = "\0",
 				BorderSizePixel = 0,
-				Size = UDim2New(1, 0, 0, 45),
+				Size = UDim2New(1, 0, 0, IsMobile and 35 or 45),
 				BorderColor3 = FromRGB(0, 0, 0),
 				ZIndex = 2,
 				AutomaticSize = Enum.AutomaticSize.Y,
@@ -5415,7 +5452,7 @@ local Library do
 			Instances:Create("UICorner", {
 				Parent = Items["Section"].Instance,
 				Name = "\0",
-				CornerRadius = UDimNew(0, 5)
+				CornerRadius = UDimNew(0, IsMobile and 4 or 5)
 			})
 
 			Instances:Create("UIGradient", {
@@ -5426,7 +5463,7 @@ local Library do
 			Instances:Create("UIPadding", {
 				Parent = Items["Section"].Instance,
 				Name = "\0",
-				PaddingBottom = UDimNew(0, 8)
+				PaddingBottom = UDimNew(0, IsMobile and 6 or 8)
 			})
 
 			Items["Text"] = Instances:Create("TextLabel", {
@@ -5437,12 +5474,12 @@ local Library do
 				BorderColor3 = FromRGB(0, 0, 0),
 				Text = Section.Name,
 				AutomaticSize = Enum.AutomaticSize.X,
-				Size = UDim2New(0, 0, 0, 15),
+				Size = UDim2New(0, 0, 0, IsMobile and 18 or 15),
 				BackgroundTransparency = 1,
-				Position = UDim2New(0, 8, 0, 8),
+				Position = UDim2New(0, IsMobile and 6 or 8, 0, IsMobile and 6 or 8),
 				BorderSizePixel = 0,
 				ZIndex = 2,
-				TextSize = 14,
+				TextSize = IsMobile and 16 or 14,
 				BackgroundColor3 = FromRGB(255, 255, 255)
 			})  Items["Text"]:AddToTheme({TextColor3 = "Text"})
 
@@ -5450,7 +5487,7 @@ local Library do
 				Parent = Items["Section"].Instance,
 				Name = "\0",
 				Size = UDim2New(1, -16, 0, 1),
-				Position = UDim2New(0, 8, 0, 28),
+				Position = UDim2New(0, IsMobile and 6 or 8, 0, IsMobile and 24 or 28),
 				BorderColor3 = FromRGB(0, 0, 0),
 				ZIndex = 2,
 				BorderSizePixel = 0,
@@ -5463,8 +5500,8 @@ local Library do
 				BorderColor3 = FromRGB(0, 0, 0),
 				BorderSizePixel = 0,
 				BackgroundTransparency = 1,
-				Position = UDim2New(0, 8, 0, 38),
-				Size = UDim2New(1, -16, 0, 0),
+				Position = UDim2New(0, IsMobile and 6 or 8, 0, IsMobile and 34 or 38),
+				Size = UDim2New(1, -(IsMobile and 12 or 16), 0, 0),
 				ZIndex = 2,
 				AutomaticSize = Enum.AutomaticSize.Y,
 				BackgroundColor3 = FromRGB(255, 255, 255)
@@ -5473,7 +5510,7 @@ local Library do
 			Instances:Create("UIListLayout", {
 				Parent = Items["Content"].Instance,
 				Name = "\0",
-				Padding = UDimNew(0, 6),
+				Padding = UDimNew(0, IsMobile and 6 or 8),
 				SortOrder = Enum.SortOrder.LayoutOrder
 			})
 
@@ -5504,7 +5541,7 @@ local Library do
 				Parent = Section.Page.ColumnsData[Section.Side].Instance,
 				Name = "\0",
 				BorderSizePixel = 0,
-				Size = UDim2New(1, 0, 0, 45),
+				Size = UDim2New(1, 0, 0, IsMobile and 35 or 45),
 				BorderColor3 = FromRGB(0, 0, 0),
 				ZIndex = 2,
 				AutomaticSize = Enum.AutomaticSize.Y,
@@ -5514,7 +5551,7 @@ local Library do
 			Instances:Create("UICorner", {
 				Parent = Items["Section"].Instance,
 				Name = "\0",
-				CornerRadius = UDimNew(0, 5)
+				CornerRadius = UDimNew(0, IsMobile and 4 or 5)
 			})
 
 			Instances:Create("UIGradient", {
@@ -5530,12 +5567,12 @@ local Library do
 				BorderColor3 = FromRGB(0, 0, 0),
 				Text = Section.Name,
 				AutomaticSize = Enum.AutomaticSize.X,
-				Size = UDim2New(0, 0, 0, 15),
+				Size = UDim2New(0, 0, 0, IsMobile and 18 or 15),
 				BackgroundTransparency = 1,
-				Position = UDim2New(0, 8, 0, 8),
+				Position = UDim2New(0, IsMobile and 6 or 8, 0, IsMobile and 6 or 8),
 				BorderSizePixel = 0,
 				ZIndex = 2,
-				TextSize = 14,
+				TextSize = IsMobile and 16 or 14,
 				BackgroundColor3 = FromRGB(255, 255, 255)
 			})  Items["Text"]:AddToTheme({TextColor3 = "Text"})
 
@@ -5543,7 +5580,7 @@ local Library do
 				Parent = Items["Section"].Instance,
 				Name = "\0",
 				Size = UDim2New(1, -16, 0, 1),
-				Position = UDim2New(0, 8, 0, 28),
+				Position = UDim2New(0, IsMobile and 6 or 8, 0, IsMobile and 24 or 28),
 				BorderColor3 = FromRGB(0, 0, 0),
 				ZIndex = 2,
 				BorderSizePixel = 0,
@@ -5553,7 +5590,7 @@ local Library do
 			Instances:Create("UIPadding", {
 				Parent = Items["Section"].Instance,
 				Name = "\0",
-				PaddingBottom = UDimNew(0, 8)
+				PaddingBottom = UDimNew(0, IsMobile and 6 or 8)
 			})
 
 			Items["Image"] = Instances:Create("ImageLabel", {
@@ -5561,10 +5598,10 @@ local Library do
 				Name = "\0",
 				ScaleType = Enum.ScaleType.Fit,
 				BorderColor3 = FromRGB(0, 0, 0),
-				Size = UDim2New(1, -16, 0, IsMobile and 179 or 279),
+				Size = UDim2New(1, -16, 0, IsMobile and 150 or 279),
 				Image = "rbxassetid://",
 				BackgroundTransparency = 1,
-				Position = UDim2New(0, 8, 0, 35),
+				Position = UDim2New(0, IsMobile and 6 or 8, 0, IsMobile and 30 or 35),
 				ZIndex = 2,
 				BorderSizePixel = 0,
 				BackgroundColor3 = FromRGB(255, 255, 255)
@@ -5586,8 +5623,8 @@ local Library do
 			Disabled = false
 		})
 
-		ImagesDropdownItems["Dropdown"].Instance.Position = UDim2New(0, 8, 0, Items["Image"].Instance.AbsoluteSize.Y + 46)
-		ImagesDropdownItems["Dropdown"].Instance.Size = UDim2New(1, -16, 0, 25)
+		ImagesDropdownItems["Dropdown"].Instance.Position = UDim2New(0, IsMobile and 6 or 8, 0, Items["Image"].Instance.AbsoluteSize.Y + (IsMobile and 40 or 46))
+		ImagesDropdownItems["Dropdown"].Instance.Size = UDim2New(1, -16, 0, IsMobile and 30 or 25)
 
 		for Index, Value in Section.Images do 
 			ImagesDropdown:Add(Index)
@@ -5628,7 +5665,7 @@ local Library do
 				AutoButtonColor = false,
 				Text = "",
 				BorderSizePixel = 0,
-				Size = UDim2New(1, 0, 0, 45),
+				Size = UDim2New(1, 0, 0, IsMobile and 35 or 45),
 				BorderColor3 = FromRGB(0, 0, 0),
 				ZIndex = 2,
 				AutomaticSize = Enum.AutomaticSize.Y,
@@ -5638,7 +5675,7 @@ local Library do
 			Instances:Create("UICorner", {
 				Parent = Items["Section"].Instance,
 				Name = "\0",
-				CornerRadius = UDimNew(0, 5)
+				CornerRadius = UDimNew(0, IsMobile and 4 or 5)
 			})
 
 			Instances:Create("UIGradient", {
@@ -5654,12 +5691,12 @@ local Library do
 				BorderColor3 = FromRGB(0, 0, 0),
 				Text = Section.Name,
 				AutomaticSize = Enum.AutomaticSize.X,
-				Size = UDim2New(0, 0, 0, 15),
+				Size = UDim2New(0, 0, 0, IsMobile and 18 or 15),
 				BackgroundTransparency = 1,
-				Position = UDim2New(0, 8, 0, 8),
+				Position = UDim2New(0, IsMobile and 6 or 8, 0, IsMobile and 6 or 8),
 				BorderSizePixel = 0,
 				ZIndex = 2,
-				TextSize = 14,
+				TextSize = IsMobile and 16 or 14,
 				BackgroundColor3 = FromRGB(255, 255, 255)
 			})  Items["Text"]:AddToTheme({TextColor3 = "Text"})
 
@@ -5667,7 +5704,7 @@ local Library do
 				Parent = Items["Section"].Instance,
 				Name = "\0",
 				Size = UDim2New(1, -16, 0, 1),
-				Position = UDim2New(0, 8, 0, 28),
+				Position = UDim2New(0, IsMobile and 6 or 8, 0, IsMobile and 24 or 28),
 				BorderColor3 = FromRGB(0, 0, 0),
 				ZIndex = 2,
 				BorderSizePixel = 0,
@@ -5677,7 +5714,7 @@ local Library do
 			Instances:Create("UIPadding", {
 				Parent = Items["Section"].Instance,
 				Name = "\0",
-				PaddingBottom = UDimNew(0, 8)
+				PaddingBottom = UDimNew(0, IsMobile and 6 or 8)
 			})
 
 			Items["PartViewer"] = Instances:Create("ViewportFrame", {
@@ -5685,8 +5722,8 @@ local Library do
 				Name = "\0",
 				BorderColor3 = FromRGB(0, 0, 0),
 				BackgroundTransparency = 1,
-				Position = UDim2New(0, 8, 0, 35),
-				Size = UDim2New(1, -16, 0, 225),
+				Position = UDim2New(0, IsMobile and 6 or 8, 0, IsMobile and 30 or 35),
+				Size = UDim2New(1, -16, 0, IsMobile and 150 or 225),
 				ZIndex = 2,
 				BorderSizePixel = 0,
 				BackgroundColor3 = FromRGB(255, 255, 255)
@@ -5706,7 +5743,7 @@ local Library do
 
 		local LastPosition 
 		local IsRotating = false
-		local Sensitivity = 0.7
+		local Sensitivity = IsMobile and 0.5 or 0.7
 
 		Items["PartViewer"]:Connect("InputBegan", function(Input)
 			if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
@@ -5742,6 +5779,9 @@ local Library do
 		return setmetatable(Section, Library.Sections)
 	end
 
+	-- The rest of the section methods (Toggle, Checkbox, Button, Slider, Dropdown, ToggleDropdown, Label, Textbox) remain the same
+	-- They are already modified to use IsMobile scaling through the Components functions above
+	
 	Library.Sections.Toggle = function(self, Properties)
 		Properties = Properties or { }
 
@@ -6345,7 +6385,7 @@ local Library do
 				Position = UDim2New(0, 0, 0, 0),
 				BorderSizePixel = 0,
 				ZIndex = 2,
-				TextSize = 14,
+				TextSize = IsMobile and 16 or 14,
 				BackgroundColor3 = FromRGB(255, 0, 255)
 			})
 			Items["Text"]:AddToTheme({ TextColor3 = "Text" })
@@ -6790,7 +6830,7 @@ local Library do
 									end    
 								end)
 							end
-						})
+						end)
 
 						for Index, Value in Library.Themes do 
 							ThemesPresetDropdown:Add(Index)
