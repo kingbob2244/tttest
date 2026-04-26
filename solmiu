@@ -87,6 +87,9 @@ local Library do
 		IsMobile = false
 	end
 
+	-- Mobile scaling factor (50% smaller = 0.5)
+	local MobileScale = IsMobile and 0.5 or 1
+    
 	Library = {
 		Theme =  { },
 		Themes = { },
