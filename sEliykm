@@ -434,7 +434,7 @@ local Library do
 			setmetatable(NewItem, Instances)
 
 			for Property, Value in NewItem.Properties do
-				-- Apply mobile scaling to size properties
+				-- Apply mobile scaling to size and position properties
 				if MobileScale ~= 1 and (Property == "Size" or Property == "Position") and type(Value) == "table" then
 					local scaledValue = UDim2New(Value.X.Scale, Value.X.Offset * MobileScale, Value.Y.Scale, Value.Y.Offset * MobileScale)
 					NewItem.Instance[Property] = scaledValue
@@ -731,7 +731,7 @@ local Library do
 						ResizeMax = Maximum or Gui.Parent.AbsoluteSize - Gui.AbsoluteSize
 
 						Delta = Start + UDim2New(0, Input.Position.X, 0, Input.Position.Y)
-						Delta = UDim2New(0, math.clamp(Delta.X.Offset, Minimum.X * MobileScale, ResizeMax.X), 0, math.clamp(Delta.Y.Offset, Minimum.Y * MobileScale, ResizeMax.Y))
+						Delta = UDim2New(0, math.clamp(Delta.X.Offset, (Minimum.X or 0) * MobileScale, ResizeMax.X), 0, math.clamp(Delta.Y.Offset, (Minimum.Y or 0) * MobileScale, ResizeMax.Y))
 
 						Tween:Create(Gui, TweenInfo.new(0.17, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {Size = Delta}, true)
 					end
@@ -1856,6 +1856,7 @@ local Library do
 					ZIndex = 2,
 					TextSize = 14 * MobileScale,
 					BackgroundColor3 = FromRGB(255, 255, 255)
+					
 				})  Items["Value"]:AddToTheme({TextColor3 = "Text"})
 			end
 
@@ -4703,9 +4704,13 @@ local Library do
 	Library.Window = function(self, Properties)
 		Properties = Properties or { }
 
+		-- Scale the window size for mobile
+		local WindowSize = Properties.Size or Properties.size or (not IsMobile and UDim2New(0, 770, 0, 526) or UDim2New(0, 526, 0, 350))
+		local ScaledWindowSize = UDim2New(WindowSize.X.Scale, WindowSize.X.Offset * MobileScale, WindowSize.Y.Scale, WindowSize.Y.Offset * MobileScale)
+
 		local Window = {
 			Name = Properties.Name or Properties.name or "eclipse",
-			Size = Properties.Size or Properties.size or (not IsMobile and UDim2New(0, 770 * MobileScale, 0, 526 * MobileScale) or UDim2New(0, 526 * MobileScale, 0, 350 * MobileScale)),
+			Size = ScaledWindowSize,
 			FadeSpeed = Properties.FadeSpeed or Properties.fadespeed or 0.25,
 			BackgroundIcon = Properties.BackgroundIcon or Properties.backgroundicon or "rbxassetid://",
 
@@ -4974,7 +4979,7 @@ local Library do
 			Window.Items = Items
 		end
 
-		UserInputService.MouseIconEnabled = true -- REMOVED CUSTOM MOUSE POINTER - USING DEFAULT CURSOR
+		UserInputService.MouseIconEnabled = true -- REMOVED CUSTOM MOUSE POINTER
 
 		local Debounce = false
 
@@ -5048,7 +5053,6 @@ local Library do
 		Library:Connect(UserInputService.InputBegan, function(Input)
 			if tostring(Input.KeyCode) == Library.MenuKeybind or tostring(Input.UserInputType) == Library.MenuKeybind then
 				Window.IsOpen = not Window.IsOpen
-				-- Removed custom cursor related code
 				Items["MainFrame"].Instance.Visible = Window.IsOpen
 			end
 		end)
